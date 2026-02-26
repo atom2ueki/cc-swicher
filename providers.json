@@ -1,0 +1,29 @@
+{
+  "version": "3.1.0",
+  "providers": {
+    "zai": {
+      "name": "Z.AI",
+      "base_url": "https://api.z.ai/api/anthropic",
+      "env_var": "ZAI_API_KEY",
+      "models": {
+        "haiku": "glm-4.5-air",
+        "sonnet": "glm-5",
+        "opus": "glm-5"
+      }
+    },
+    "minimax": {
+      "name": "MiniMax",
+      "base_url": "https://api.minimax.io/anthropic",
+      "env_var": "MINIMAX_API_KEY",
+      "models": {
+        "default": "MiniMax-M2.5"
+      }
+    },
+    "anthropic": {
+      "name": "Claude Code",
+      "base_url": null,
+      "env_var": null,
+      "models": null
+    }
+  }
+}
