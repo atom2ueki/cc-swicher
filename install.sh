@@ -7,7 +7,32 @@ set -euo pipefail
 
 # GitHub repository info
 GITHUB_REPO="${GITHUB_REPO:-atom2ueki/cc-switcher}"
+GITHUB_API="https://api.github.com/repos/${GITHUB_REPO}"
+
+# Detect HTTP client
+if command -v curl &>/dev/null; then
+    HTTP_CLIENT="curl"
+elif command -v wget &>/dev/null; then
+    HTTP_CLIENT="wget"
+fi
+
+# Get latest release tag (default to main if no tags or error)
+get_latest_tag() {
+    local tags_json
+    if [[ "$HTTP_CLIENT" == "curl" ]]; then
+        tags_json=$(curl -fsSL "${GITHUB_API}/tags" 2>/dev/null) || return 1
+    elif [[ "$HTTP_CLIENT" == "wget" ]]; then
+        tags_json=$(wget -qO- "${GITHUB_API}/tags" 2>/dev/null) || return 1
+    else
+        return 1
+    fi
+    echo "$tags_json" | grep -o '"name": "[^"]*"' | sed 's/"name": "//;s/"//' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1
+}
+
+# Set GITHUB_BRANCH to latest tag if not specified
+GITHUB_BRANCH="${GITHUB_BRANCH:-$(get_latest_tag 2>/dev/null)}"
 GITHUB_BRANCH="${GITHUB_BRANCH:-main}"
+
 GITHUB_RAW="https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}"
 
 # Detect if running from local directory or piped from curl
