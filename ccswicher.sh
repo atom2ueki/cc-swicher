@@ -698,6 +698,7 @@ show_help() {
     echo -e "${YELLOW}Commands:${NC}"
     echo "  status        Show current configuration"
     echo "  list          List available providers"
+    echo "  version       Show version"
     echo "  upgrade       Update to latest version"
     echo "  help          Show this help"
     echo ""
@@ -783,6 +784,9 @@ main() {
             ;;
         list)
             list_providers
+            ;;
+        version|-v|--version)
+            echo "CC-Switcher v${VERSION}"
             ;;
         upgrade)
             upgrade_self
