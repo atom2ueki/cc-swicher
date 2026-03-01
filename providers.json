@@ -24,7 +24,7 @@
     },
     "lmstudio": {
       "name": "LM Studio",
-      "base_url": "http://localhost:1234/v1",
+      "base_url": "http://localhost:1234",
       "models": {
         "default": "zai-org/glm-4.7-flash"
       }
