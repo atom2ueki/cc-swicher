@@ -16,7 +16,7 @@ set -euo pipefail
 
 # Constants
 # Version - update this when creating a new release tag
-VERSION="1.0.0"
+VERSION="1.0.1"
 REPO_RAW="https://raw.githubusercontent.com/atom2ueki/cc-switcher/main"
 REPO_API="https://api.github.com/repos/atom2ueki/cc-switcher"
 PROVIDERS_URL="${REPO_RAW}/providers.json"
@@ -650,7 +650,7 @@ upgrade_self() {
     tmp_script=$(mktemp)
 
     # Download from the specific tag
-    local tag_url="${REPO_RAW}/${remote_version}/ccswitcher.sh"
+    local tag_url="https://raw.githubusercontent.com/atom2ueki/cc-switcher/${remote_version}/ccswitcher.sh"
     if command -v curl &>/dev/null; then
         curl -fsSL "$tag_url" -o "$tmp_script"
     elif command -v wget &>/dev/null; then
