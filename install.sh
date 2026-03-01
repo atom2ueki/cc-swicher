@@ -6,7 +6,7 @@ set -euo pipefail
 # Optional: system-level, project-level, rc-function injection
 
 # GitHub repository info
-GITHUB_REPO="${GITHUB_REPO:-atom2ueki/cc-swicher}"
+GITHUB_REPO="${GITHUB_REPO:-atom2ueki/cc-switcher}"
 GITHUB_BRANCH="${GITHUB_BRANCH:-main}"
 GITHUB_RAW="https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}"
 

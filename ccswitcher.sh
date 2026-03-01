@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 ############################################################
 # CC-Switcher - Claude Code Model Switcher
-# Version: 3.1.0
+# Version: 1.0.0
 #
 # Usage:
 #   ccswitcher -g -p <provider>    # Set global provider
@@ -15,8 +15,10 @@
 set -euo pipefail
 
 # Constants
-VERSION="3.1.0"
-REPO_RAW="https://raw.githubusercontent.com/atom2ueki/cc-swicher/main"
+# Version - update this when creating a new release tag
+VERSION="1.0.0"
+REPO_RAW="https://raw.githubusercontent.com/atom2ueki/cc-switcher/main"
+REPO_API="https://api.github.com/repos/atom2ueki/cc-switcher"
 PROVIDERS_URL="${REPO_RAW}/providers.json"
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ccswitcher"
 CACHE_FILE="$CACHE_DIR/providers.json"
@@ -618,19 +620,21 @@ show_status() {
 upgrade_self() {
     log_info "Upgrading ccswitcher..."
 
-    # Fetch remote version
-    local remote_version
+    # Fetch all tags and find the latest semantic version
+    local tags_json remote_version
     if command -v curl &>/dev/null; then
-        remote_version=$(curl -fsSL "${REPO_RAW}/ccswitcher.sh" 2>/dev/null | grep '^VERSION=' | head -1 | cut -d'"' -f2)
+        tags_json=$(curl -fsSL "${REPO_API}/tags" 2>/dev/null)
+        remote_version=$(echo "$tags_json" | grep -o '"name": "[^"]*"' | sed 's/"name": "//;s/"//' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
     elif command -v wget &>/dev/null; then
-        remote_version=$(wget -qO- "${REPO_RAW}/ccswitcher.sh" 2>/dev/null | grep '^VERSION=' | head -1 | cut -d'"' -f2)
+        tags_json=$(wget -qO- "${REPO_API}/tags" 2>/dev/null)
+        remote_version=$(echo "$tags_json" | grep -o '"name": "[^"]*"' | sed 's/"name": "//;s/"//' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
     else
         log_error "Need curl or wget"
         return 1
     fi
 
     if [[ -z "$remote_version" ]]; then
-        log_error "Could not fetch remote version"
+        log_error "Could not fetch remote version tags"
         return 1
     fi
 
@@ -649,10 +653,12 @@ upgrade_self() {
     local tmp_script
     tmp_script=$(mktemp)
 
+    # Download from the specific tag
+    local tag_url="${REPO_RAW}/${remote_version}/ccswitcher.sh"
     if command -v curl &>/dev/null; then
-        curl -fsSL "${REPO_RAW}/ccswitcher.sh" -o "$tmp_script"
+        curl -fsSL "$tag_url" -o "$tmp_script"
     elif command -v wget &>/dev/null; then
-        wget -qO "$tmp_script" "${REPO_RAW}/ccswitcher.sh"
+        wget -qO "$tmp_script" "$tag_url"
     else
         log_error "Need curl or wget"
         rm -f "$tmp_script"
