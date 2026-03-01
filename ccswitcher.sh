@@ -16,7 +16,7 @@ set -euo pipefail
 
 # Constants
 # Version - update this when creating a new release tag
-VERSION="1.0.2"
+VERSION="1.0.4"
 REPO_RAW="https://raw.githubusercontent.com/atom2ueki/cc-switcher/main"
 REPO_API="https://api.github.com/repos/atom2ueki/cc-switcher"
 PROVIDERS_URL="${REPO_RAW}/providers.json"
@@ -376,13 +376,10 @@ get_non_env_content() {
 rebuild_settings() {
     local settings="$1"
     shift
-    local new_env_pairs=("$@")
 
     # Get existing non-ccs env pairs
-    local other_env=()
-    while IFS=: read -r key value; do
-        [[ -n "$key" ]] && other_env+=("$key:$value")
-    done <<< "$(get_other_env_keys "$settings")"
+    local other_env
+    other_env=$(get_other_env_keys "$settings")
 
     # Get non-env content
     local non_env
@@ -394,19 +391,32 @@ rebuild_settings() {
     # Build env block
     result+="  \"env\": {\n"
 
-    local all_env=()
+    # Collect all env pairs (other_env + new env pairs from "$@")
+    local all_env=""
     # Add other env pairs first
-    for pair in "${other_env[@]}"; do
-        all_env+=("$pair")
-    done
+    if [[ -n "$other_env" ]]; then
+        all_env="$other_env"
+    fi
     # Add new env pairs
-    for pair in "${new_env_pairs[@]}"; do
-        all_env+=("$pair")
+    while [[ $# -gt 0 ]]; do
+        if [[ -n "$1" ]]; then
+            if [[ -n "$all_env" ]]; then
+                all_env+=$'\n'"$1"
+            else
+                all_env="$1"
+            fi
+        fi
+        shift
     done
 
-    local total=${#all_env[@]}
     local count=0
-    for pair in "${all_env[@]}"; do
+    local total=0
+    while IFS=: read -r pair; do
+        [[ -n "$pair" ]] && ((total++)) || true
+    done <<< "$all_env"
+
+    while IFS=: read -r pair; do
+        [[ -n "$pair" ]] || continue
         ((count++))
         local key="${pair%%:*}"
         local value="${pair#*:}"
@@ -417,7 +427,7 @@ rebuild_settings() {
         else
             result+="    \"$key\": \"$escaped\"\n"
         fi
-    done
+    done <<< "$all_env"
 
     result+="  }"
 
