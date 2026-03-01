@@ -4,7 +4,6 @@
     "zai": {
       "name": "Z.AI",
       "base_url": "https://api.z.ai/api/anthropic",
-      "env_var": "ZAI_API_KEY",
       "models": {
         "haiku": "glm-4.5-air",
         "sonnet": "glm-5",
@@ -14,7 +13,6 @@
     "minimax": {
       "name": "MiniMax",
       "base_url": "https://api.minimax.io/anthropic",
-      "env_var": "MINIMAX_API_KEY",
       "models": {
         "default": "MiniMax-M2.5"
       }
@@ -22,8 +20,14 @@
     "anthropic": {
       "name": "Claude Code",
       "base_url": null,
-      "env_var": null,
       "models": null
+    },
+    "lmstudio": {
+      "name": "LM Studio",
+      "base_url": "http://localhost:1234/v1",
+      "models": {
+        "default": "zai-org/glm-4.7-flash"
+      }
     }
   }
 }

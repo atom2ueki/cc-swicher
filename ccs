@@ -17,10 +17,12 @@ Models:
   zai, glm       - Z.AI (formerly GLM)
   minimax, mm    - MiniMax
   claude, sonnet - Claude (official)
+  lmstudio, lm   - LM Studio (local)
 
 Examples:
   ./ccc zai                              # Launch with Z.AI
   ./ccc minimax --dangerously-skip-permissions  # Pass options to Claude Code
+  ./ccc lmstudio                        # Launch with LM Studio local
 EOF
 }
 
@@ -39,7 +41,7 @@ model="$1"
 shift || true
 
 case "$model" in
-    zai|z.ai|glm|glm5|minimax|mm|claude|sonnet|s)
+    zai|z.ai|glm|glm5|minimax|mm|claude|sonnet|s|lmstudio|lm)
         eval "$("$CCM" "$model")"
         ;;
     *)

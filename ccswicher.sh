@@ -478,33 +478,26 @@ apply_provider() {
     local new_env_pairs=()
 
     # Get provider config values
-    local base_url env_var
+    local base_url
     base_url=$(parse_json_value "$config_json" "base_url") || true
-    env_var=$(parse_json_value "$config_json" "env_var") || true
 
     # Add base_url if present
     if [[ -n "$base_url" ]]; then
         new_env_pairs+=("ANTHROPIC_BASE_URL:$base_url")
     fi
 
-    # Handle auth token - prompt if not in env
-    if [[ -n "$env_var" ]]; then
-        local token=""
-        # Check if env var exists
-        token="${!env_var}"
-        if [[ -z "$token" ]]; then
-            # Check if there's a token in existing settings
-            token=$(get_env_value "$settings" "ANTHROPIC_AUTH_TOKEN") || true
-            if [[ -z "$token" ]]; then
-                # Prompt user for API key
-                echo -e "${YELLOW}Enter your $env_var:${NC}"
-                read -rsp "> " token
-                echo ""
-            fi
-        fi
-        if [[ -n "$token" ]]; then
-            new_env_pairs+=("ANTHROPIC_AUTH_TOKEN:$token")
-        fi
+    # Handle auth token - check existing settings, then prompt
+    local token=""
+    # Check if there's a token in existing settings
+    token=$(get_env_value "$settings" "ANTHROPIC_AUTH_TOKEN") || true
+    if [[ -z "$token" ]]; then
+        # Prompt user for API key
+        echo -e "${YELLOW}Enter your API Token:${NC}"
+        read -rsp "> " token
+        echo ""
+    fi
+    if [[ -n "$token" ]]; then
+        new_env_pairs+=("ANTHROPIC_AUTH_TOKEN:$token")
     fi
 
     # Add models
@@ -681,13 +674,14 @@ show_help() {
     echo ""
     echo -e "${YELLOW}Options:${NC}"
     echo "  -g, --global   Apply to user-level settings"
-    echo "  -p, --provider Set provider (zai, minimax, anthropic)"
+    echo "  -p, --provider Set provider (zai, minimax, anthropic, lmstudio)"
     echo "  -o, --output   Write settings to specific file"
     echo ""
     echo -e "${YELLOW}Providers:${NC}"
     echo "  zai           Z.AI (uses ZAI_API_KEY)"
     echo "  minimax       MiniMax (uses MINIMAX_API_KEY)"
     echo "  anthropic     Claude Code official (removes custom config)"
+    echo "  lmstudio      LM Studio local (uses LMSTUDIO_API_TOKEN)"
     echo ""
     echo -e "${YELLOW}Examples:${NC}"
     echo "  ccswicher -g -p zai          # Use Z.AI globally"
