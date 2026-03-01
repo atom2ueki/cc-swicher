@@ -603,11 +603,7 @@ show_status() {
     if [[ "$shown" == false ]]; then
         echo -e "${YELLOW}No ccswitcher configuration found${NC}"
         echo ""
-        echo "Set up API keys in your shell:"
-        echo '  export ZAI_API_KEY="your-key"'
-        echo '  export MINIMAX_API_KEY="your-key"'
-        echo ""
-        echo "Then switch to a provider:"
+        echo "Switch to a provider:"
         echo "  ccswitcher -g -p zai      # Global"
         echo "  ccswitcher -p minimax     # Project"
     fi
@@ -714,10 +710,10 @@ show_help() {
     echo "  -o, --output   Write settings to specific file"
     echo ""
     echo -e "${YELLOW}Providers:${NC}"
-    echo "  zai           Z.AI (uses ZAI_API_KEY)"
-    echo "  minimax       MiniMax (uses MINIMAX_API_KEY)"
-    echo "  anthropic     Claude Code official (removes custom config)"
-    echo "  lmstudio      LM Studio local (uses LMSTUDIO_API_TOKEN)"
+    echo "  zai           Z.AI"
+    echo "  minimax       MiniMax"
+    echo "  anthropic     Claude Code"
+    echo "  lmstudio      LM Studio"
     echo ""
     echo -e "${YELLOW}Examples:${NC}"
     echo "  ccswitcher -g -p zai          # Use Z.AI globally"
