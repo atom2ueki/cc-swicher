@@ -253,7 +253,7 @@ ccswitcher() {
   fi
 
   case "\$1" in
-    ""|"help"|"-h"|"--help"|"status"|"st"|"config"|"cfg"|"project"|"user")
+    ""|"help"|"-h"|"--help"|"status"|"st"|"list"|"-v"|"--version"|"version"|"upgrade"|"config"|"cfg"|"project"|"user")
       "\$script" "\$@"
       ;;
     *)
