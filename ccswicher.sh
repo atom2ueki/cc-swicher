@@ -618,6 +618,34 @@ show_status() {
 upgrade_self() {
     log_info "Upgrading ccswicher..."
 
+    # Fetch remote version
+    local remote_version
+    if command -v curl &>/dev/null; then
+        remote_version=$(curl -fsSL "${REPO_RAW}/ccswicher.sh" 2>/dev/null | grep '^VERSION=' | head -1 | cut -d'"' -f2)
+    elif command -v wget &>/dev/null; then
+        remote_version=$(wget -qO- "${REPO_RAW}/ccswicher.sh" 2>/dev/null | grep '^VERSION=' | head -1 | cut -d'"' -f2)
+    else
+        log_error "Need curl or wget"
+        return 1
+    fi
+
+    if [[ -z "$remote_version" ]]; then
+        log_error "Could not fetch remote version"
+        return 1
+    fi
+
+    # Compare versions (simple string comparison works for semantic versioning)
+    if [[ "$remote_version" == "$VERSION" ]]; then
+        log_info "Already at latest version ($VERSION)"
+        return 0
+    fi
+
+    if [[ "$remote_version" < "$VERSION" ]]; then
+        log_warn "Remote version ($remote_version) is older than local ($VERSION)"
+    else
+        log_info "Upgrading from $VERSION to $remote_version"
+    fi
+
     local tmp_script
     tmp_script=$(mktemp)
 
@@ -627,6 +655,7 @@ upgrade_self() {
         wget -qO "$tmp_script" "${REPO_RAW}/ccswicher.sh"
     else
         log_error "Need curl or wget"
+        rm -f "$tmp_script"
         return 1
     fi
 
