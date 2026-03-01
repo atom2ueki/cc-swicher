@@ -19,8 +19,8 @@ else
   LOCAL_MODE=false
 fi
 
-BEGIN_MARK="# >>> ccswicher function begin >>>"
-END_MARK="# <<< ccswicher function end <<<"
+BEGIN_MARK="# >>> ccswitcher function begin >>>"
+END_MARK="# <<< ccswitcher function end <<<"
 
 MODE="user"
 PREFIX=""
@@ -49,10 +49,10 @@ Usage: ./install.sh [options]
 Options:
   --user                User-level install (default)
   --system              System-level install (may require sudo)
-  --project             Project-level install into .ccswicher/ (current dir)
+  --project             Project-level install into .ccswitcher/ (current dir)
   --prefix <dir>        Override install bin directory
-  --rc                  Inject ccswicher function into shell rc (default)
-  --no-rc               Do not inject ccswicher function into shell rc
+  --rc                  Inject ccswitcher function into shell rc (default)
+  --no-rc               Do not inject ccswitcher function into shell rc
   --cleanup-legacy      Remove legacy rc blocks and old install dirs
   --interactive         Force interactive prompts
   -y, --yes             Assume yes for prompts
@@ -171,10 +171,10 @@ select_bin_dir() {
 
 select_data_dir() {
   if [[ "$MODE" == "system" ]]; then
-    echo "/usr/local/share/ccswicher"
+    echo "/usr/local/share/ccswitcher"
     return 0
   fi
-  echo "${XDG_DATA_HOME:-$HOME/.local/share}/ccswicher"
+  echo "${XDG_DATA_HOME:-$HOME/.local/share}/ccswitcher"
 }
 
 detect_rc_files() {
@@ -208,14 +208,14 @@ append_function_block() {
   [[ -f "$rc" ]] || touch "$rc"
   cat >> "$rc" <<EOF
 $BEGIN_MARK
-# ccswicher: define a shell function that applies exports to current shell
-unalias ccswicher 2>/dev/null || true
-unset -f ccswicher 2>/dev/null || true
-ccswicher() {
+# ccswitcher: define a shell function that applies exports to current shell
+unalias ccswitcher 2>/dev/null || true
+unset -f ccswitcher 2>/dev/null || true
+ccswitcher() {
   local script="$script_path"
   if [[ ! -f "\$script" ]]; then
-    local default1="\${XDG_DATA_HOME:-\$HOME/.local/share}/ccswicher/ccswicher.sh"
-    local default2="\$HOME/.ccswicher/ccswicher.sh"
+    local default1="\${XDG_DATA_HOME:-\$HOME/.local/share}/ccswitcher/ccswitcher.sh"
+    local default2="\$HOME/.ccswitcher/ccswitcher.sh"
     if [[ -f "\$default1" ]]; then
       script="\$default1"
     elif [[ -f "\$default2" ]]; then
@@ -223,7 +223,7 @@ ccswicher() {
     fi
   fi
   if [[ ! -f "\$script" ]]; then
-    echo "ccswicher error: script not found at \$script" >&2
+    echo "ccswitcher error: script not found at \$script" >&2
     return 1
   fi
 
@@ -253,11 +253,11 @@ legacy_detect() {
       legacy_msgs+=("- legacy rc block in $rc")
     fi
   done
-  if [[ -d "$HOME/.ccswicher" ]]; then
+  if [[ -d "$HOME/.ccswitcher" ]]; then
     found=true
-    legacy_msgs+=("- legacy dir $HOME/.ccswicher")
+    legacy_msgs+=("- legacy dir $HOME/.ccswitcher")
   fi
-  local user_data_dir="${XDG_DATA_HOME:-$HOME/.local/share}/ccswicher"
+  local user_data_dir="${XDG_DATA_HOME:-$HOME/.local/share}/ccswitcher"
   if [[ -d "$user_data_dir" && "$user_data_dir" != "$current_data_dir" ]]; then
     legacy_msgs+=("- legacy dir $user_data_dir")
     found=true
@@ -278,8 +278,8 @@ cleanup_legacy() {
   for rc in "${rc_files[@]:-}"; do
     remove_existing_block "$rc"
   done
-  rm -rf "$HOME/.ccswicher" || true
-  rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/ccswicher" || true
+  rm -rf "$HOME/.ccswitcher" || true
+  rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/ccswitcher" || true
 }
 
 download_from_github() {
@@ -297,29 +297,29 @@ download_from_github() {
 
 install_assets() {
   local data_dir="$1"
-  local dest_ccswicher_sh="$data_dir/ccswicher.sh"
+  local dest_ccswitcher_sh="$data_dir/ccswitcher.sh"
 
   run_cmd "$data_dir" mkdir -p "$data_dir"
 
-  if $LOCAL_MODE && [[ -f "$SCRIPT_DIR/ccswicher.sh" ]]; then
+  if $LOCAL_MODE && [[ -f "$SCRIPT_DIR/ccswitcher.sh" ]]; then
     log_info "Installing from local directory..."
-    run_cmd "$data_dir" cp -f "$SCRIPT_DIR/ccswicher.sh" "$dest_ccswicher_sh"
+    run_cmd "$data_dir" cp -f "$SCRIPT_DIR/ccswitcher.sh" "$dest_ccswitcher_sh"
   else
     log_info "Installing from GitHub..."
-    download_from_github "${GITHUB_RAW}/ccswicher.sh" "$dest_ccswicher_sh" || {
-      log_error "failed to download ccswicher.sh"
+    download_from_github "${GITHUB_RAW}/ccswitcher.sh" "$dest_ccswitcher_sh" || {
+      log_error "failed to download ccswitcher.sh"
       exit 1
     }
   fi
 
-  run_cmd "$data_dir" chmod +x "$dest_ccswicher_sh"
+  run_cmd "$data_dir" chmod +x "$dest_ccswitcher_sh"
 }
 
-write_ccswicher_wrapper() {
+write_ccswitcher_wrapper() {
   local bin_dir="$1"
   local mode="$2"
   local data_dir="$3"
-  local target="$bin_dir/ccswicher"
+  local target="$bin_dir/ccswitcher"
 
   run_cmd "$bin_dir" mkdir -p "$bin_dir"
 
@@ -328,9 +328,9 @@ write_ccswicher_wrapper() {
 #!/usr/bin/env bash
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
-CCM_SH="$SCRIPT_DIR/../ccswicher.sh"
+CCM_SH="$SCRIPT_DIR/../ccswitcher.sh"
 if [[ ! -f "$CCM_SH" ]]; then
-  echo "ccswicher error: missing $CCM_SH" >&2
+  echo "ccswitcher error: missing $CCM_SH" >&2
   exit 1
 fi
 exec "$CCM_SH" "$@"
@@ -340,9 +340,9 @@ EOF
     content="$(cat <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
-CCM_SH="__DATA_DIR__/ccswicher.sh"
+CCM_SH="__DATA_DIR__/ccswitcher.sh"
 if [[ ! -f "$CCM_SH" ]]; then
-  echo "ccswicher error: missing $CCM_SH" >&2
+  echo "ccswitcher error: missing $CCM_SH" >&2
   exit 1
 fi
 exec "$CCM_SH" "$@"
@@ -357,10 +357,10 @@ EOF
 
 write_project_activate() {
   local project_dir="$1"
-  local activate_path="$project_dir/.ccswicher/activate"
+  local activate_path="$project_dir/.ccswitcher/activate"
   cat > "$activate_path" <<'EOF'
-# ccswicher project activation
-# Usage: source .ccswicher/activate
+# ccswitcher project activation
+# Usage: source .ccswitcher/activate
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 export PATH="$SCRIPT_DIR/bin:$PATH"
@@ -401,7 +401,7 @@ main() {
     fi
 
     if [[ "$MODE" != "project" ]]; then
-      read -r -p "Inject ccswicher function into shell rc? [Y/n]: " rc_choice
+      read -r -p "Inject ccswitcher function into shell rc? [Y/n]: " rc_choice
       rc_choice="${rc_choice:-Y}"
       case "$rc_choice" in
         n|N|no|NO) ENABLE_RC=false ;;
@@ -423,8 +423,8 @@ main() {
   local bin_dir
   local data_dir
   if [[ "$MODE" == "project" ]]; then
-    bin_dir="$PROJECT_DIR/.ccswicher/bin"
-    data_dir="$PROJECT_DIR/.ccswicher"
+    bin_dir="$PROJECT_DIR/.ccswitcher/bin"
+    data_dir="$PROJECT_DIR/.ccswitcher"
   else
     bin_dir="$(select_bin_dir)"
     data_dir="$(select_data_dir)"
@@ -473,7 +473,7 @@ main() {
   install_assets "$data_dir"
 
   # Install wrapper
-  write_ccswicher_wrapper "$bin_dir" "$MODE" "$data_dir"
+  write_ccswitcher_wrapper "$bin_dir" "$MODE" "$data_dir"
 
   # Optional rc injection
   if $ENABLE_RC && [[ "$MODE" != "project" ]]; then
@@ -481,8 +481,8 @@ main() {
     rc_files=( $(detect_rc_files) )
     local rc_target="${rc_files[0]:-$HOME/.zshrc}"
     remove_existing_block "$rc_target"
-    append_function_block "$rc_target" "$data_dir/ccswicher.sh"
-    log_info "Injected ccswicher function into: $rc_target"
+    append_function_block "$rc_target" "$data_dir/ccswitcher.sh"
+    log_info "Injected ccswitcher function into: $rc_target"
   fi
 
   if [[ "$MODE" == "project" ]]; then
@@ -505,14 +505,14 @@ main() {
   echo ""
   echo "Next steps:"
   if [[ "$MODE" == "project" ]]; then
-    echo "  source .ccswicher/activate"
-    echo "  ccswicher status"
+    echo "  source .ccswitcher/activate"
+    echo "  ccswitcher status"
   else
     if $ENABLE_RC; then
       echo "  source ~/.zshrc (or ~/.bashrc)"
-      echo "  ccswicher status"
+      echo "  ccswitcher status"
     else
-      echo "  eval \"\$(ccswicher zai)\"   # Apply env to current shell"
+      echo "  eval \"\$(ccswitcher zai)\"   # Apply env to current shell"
     fi
   fi
 }

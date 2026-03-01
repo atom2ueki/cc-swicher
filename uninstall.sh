@@ -2,12 +2,12 @@
 set -euo pipefail
 
 # Uninstaller for CC-Switcher
-# - Removes ccswicher function blocks from shell rc files
-# - Removes PATH-installed ccswicher wrappers
+# - Removes ccswitcher function blocks from shell rc files
+# - Removes PATH-installed ccswitcher wrappers
 # - Removes installed assets under standard data dirs
 
-BEGIN_MARK="# >>> ccswicher function begin >>>"
-END_MARK="# <<< ccswicher function end <<<"
+BEGIN_MARK="# >>> ccswitcher function begin >>>"
+END_MARK="# <<< ccswitcher function end <<<"
 
 log_info() {
   echo "==> $*"
@@ -38,7 +38,7 @@ remove_block() {
       $0==e {inblock=0; next}
       !inblock {print}
     ' "$rc" > "$tmp" && mv "$tmp" "$rc"
-    echo "Removed ccswicher function from: $rc"
+    echo "Removed ccswitcher function from: $rc"
   fi
 }
 
@@ -69,17 +69,17 @@ find_candidate_bin_dirs() {
   echo "${bins[*]}"
 }
 
-is_ccswicher_wrapper() {
+is_ccswitcher_wrapper() {
   local path="$1"
   [[ -f "$path" ]] || return 1
   if [[ -L "$path" ]]; then
     local target
     target="$(readlink "$path" 2>/dev/null || true)"
-    if [[ "$target" == *"/ccswicher.sh" || "$target" == *".ccswicher/ccswicher.sh" ]]; then
+    if [[ "$target" == *"/ccswitcher.sh" || "$target" == *".ccswitcher/ccswitcher.sh" ]]; then
       return 0
     fi
   fi
-  if grep -q "ccswicher error: missing" "$path" && grep -q "CCM_SH=" "$path"; then
+  if grep -q "ccswitcher error: missing" "$path" && grep -q "CCM_SH=" "$path"; then
     return 0
   fi
   return 1
@@ -92,37 +92,37 @@ remove_wrappers() {
   local bin_dir
   for bin_dir in "${bin_dirs[@]:-}"; do
     [[ -d "$bin_dir" ]] || continue
-    local ccswicher_path="$bin_dir/ccswicher"
-    if is_ccswicher_wrapper "$ccswicher_path"; then
-      run_cmd "$bin_dir" rm -f "$ccswicher_path"
-      echo "Removed ccswicher wrapper: $ccswicher_path"
+    local ccswitcher_path="$bin_dir/ccswitcher"
+    if is_ccswitcher_wrapper "$ccswitcher_path"; then
+      run_cmd "$bin_dir" rm -f "$ccswitcher_path"
+      echo "Removed ccswitcher wrapper: $ccswitcher_path"
       removed_any=true
     fi
   done
 
   if ! $removed_any; then
-    log_warn "No PATH-installed ccswicher wrappers detected"
+    log_warn "No PATH-installed ccswitcher wrappers detected"
   fi
 }
 
 remove_data_dirs() {
-  local user_dir="${XDG_DATA_HOME:-$HOME/.local/share}/ccswicher"
-  local legacy_dir="$HOME/.ccswicher"
-  local system_dir="/usr/local/share/ccswicher"
+  local user_dir="${XDG_DATA_HOME:-$HOME/.local/share}/ccswitcher"
+  local legacy_dir="$HOME/.ccswitcher"
+  local system_dir="/usr/local/share/ccswitcher"
 
   if [[ -d "$user_dir" ]]; then
     rm -rf "$user_dir"
-    echo "Removed installed ccswicher assets at: $user_dir"
+    echo "Removed installed ccswitcher assets at: $user_dir"
   fi
 
   if [[ -d "$legacy_dir" ]]; then
     rm -rf "$legacy_dir"
-    echo "Removed legacy ccswicher assets at: $legacy_dir"
+    echo "Removed legacy ccswitcher assets at: $legacy_dir"
   fi
 
   if [[ -d "$system_dir" ]]; then
     run_cmd "$system_dir" rm -rf "$system_dir"
-    echo "Removed system ccswicher assets at: $system_dir"
+    echo "Removed system ccswitcher assets at: $system_dir"
   fi
 }
 

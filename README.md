@@ -33,38 +33,38 @@ cd cc-swicher
 ### Switch provider (shows model picker)
 
 ```bash
-ccswicher deepseek
-ccswicher glm china
+ccswitcher deepseek
+ccswitcher glm china
 ```
 
 ### Quick switch with specific model
 
 ```bash
-ccswicher deepseek --model deepseek-reasoner
-ccswicher deepseek --skip-picker  # Use default
+ccswitcher deepseek --model deepseek-reasoner
+ccswitcher deepseek --skip-picker  # Use default
 ```
 
 ### Check status
 
 ```bash
-ccswicher status
+ccswitcher status
 ```
 
 ### User-level settings (persistent)
 
 ```bash
-ccswicher user glm global
-ccswicher user reset
+ccswitcher user glm global
+ccswitcher user reset
 ```
 
 ## Configuration
 
-Config file: `~/.ccswicher_config`
+Config file: `~/.ccswitcher_config`
 
 Add your API keys:
 
 ```bash
-ccswicher config
+ccswitcher config
 ```
 
 ## License

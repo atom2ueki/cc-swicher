@@ -4,12 +4,12 @@
 # Version: 3.1.0
 #
 # Usage:
-#   ccswicher -g -p <provider>    # Set global provider
-#   ccswicher -p <provider>       # Set project provider
-#   ccswicher -g status           # Show global status
-#   ccswicher status              # Show project status
-#   ccswicher list                # List available providers
-#   ccswicher upgrade             # Upgrade to latest version
+#   ccswitcher -g -p <provider>    # Set global provider
+#   ccswitcher -p <provider>       # Set project provider
+#   ccswitcher -g status           # Show global status
+#   ccswitcher status              # Show project status
+#   ccswitcher list                # List available providers
+#   ccswitcher upgrade             # Upgrade to latest version
 ############################################################
 
 set -euo pipefail
@@ -18,7 +18,7 @@ set -euo pipefail
 VERSION="3.1.0"
 REPO_RAW="https://raw.githubusercontent.com/atom2ueki/cc-swicher/main"
 PROVIDERS_URL="${REPO_RAW}/providers.json"
-CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ccswicher"
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ccswitcher"
 CACHE_FILE="$CACHE_DIR/providers.json"
 CACHE_TTL=86400  # 24 hours
 
@@ -38,7 +38,7 @@ fi
 USER_SETTINGS="$HOME/.claude/settings.json"
 PROJECT_SETTINGS=".claude/settings.local.json"
 
-# Keys managed by ccswicher (to be removed when switching to anthropic)
+# Keys managed by ccswitcher (to be removed when switching to anthropic)
 CCS_KEYS=(
     "ANTHROPIC_BASE_URL"
     "ANTHROPIC_AUTH_TOKEN"
@@ -599,15 +599,15 @@ show_status() {
     fi
 
     if [[ "$shown" == false ]]; then
-        echo -e "${YELLOW}No ccswicher configuration found${NC}"
+        echo -e "${YELLOW}No ccswitcher configuration found${NC}"
         echo ""
         echo "Set up API keys in your shell:"
         echo '  export ZAI_API_KEY="your-key"'
         echo '  export MINIMAX_API_KEY="your-key"'
         echo ""
         echo "Then switch to a provider:"
-        echo "  ccswicher -g -p zai      # Global"
-        echo "  ccswicher -p minimax     # Project"
+        echo "  ccswitcher -g -p zai      # Global"
+        echo "  ccswitcher -p minimax     # Project"
     fi
 }
 
@@ -616,14 +616,14 @@ show_status() {
 ############################################################
 
 upgrade_self() {
-    log_info "Upgrading ccswicher..."
+    log_info "Upgrading ccswitcher..."
 
     # Fetch remote version
     local remote_version
     if command -v curl &>/dev/null; then
-        remote_version=$(curl -fsSL "${REPO_RAW}/ccswicher.sh" 2>/dev/null | grep '^VERSION=' | head -1 | cut -d'"' -f2)
+        remote_version=$(curl -fsSL "${REPO_RAW}/ccswitcher.sh" 2>/dev/null | grep '^VERSION=' | head -1 | cut -d'"' -f2)
     elif command -v wget &>/dev/null; then
-        remote_version=$(wget -qO- "${REPO_RAW}/ccswicher.sh" 2>/dev/null | grep '^VERSION=' | head -1 | cut -d'"' -f2)
+        remote_version=$(wget -qO- "${REPO_RAW}/ccswitcher.sh" 2>/dev/null | grep '^VERSION=' | head -1 | cut -d'"' -f2)
     else
         log_error "Need curl or wget"
         return 1
@@ -650,9 +650,9 @@ upgrade_self() {
     tmp_script=$(mktemp)
 
     if command -v curl &>/dev/null; then
-        curl -fsSL "${REPO_RAW}/ccswicher.sh" -o "$tmp_script"
+        curl -fsSL "${REPO_RAW}/ccswitcher.sh" -o "$tmp_script"
     elif command -v wget &>/dev/null; then
-        wget -qO "$tmp_script" "${REPO_RAW}/ccswicher.sh"
+        wget -qO "$tmp_script" "${REPO_RAW}/ccswitcher.sh"
     else
         log_error "Need curl or wget"
         rm -f "$tmp_script"
@@ -661,7 +661,7 @@ upgrade_self() {
 
     # Find where we're installed
     local script_path
-    script_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/ccswicher.sh"
+    script_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/ccswitcher.sh"
 
     if [[ ! -w "$script_path" ]]; then
         log_warn "Need sudo to write to $script_path"
@@ -689,11 +689,11 @@ show_help() {
     echo "Switch between AI providers for Claude Code"
     echo ""
     echo -e "${YELLOW}Usage:${NC}"
-    echo "  ccswicher -g -p <provider>    Set global provider"
-    echo "  ccswicher -p <provider>       Set project provider"
-    echo "  ccswicher -g -p <provider> -o <file>  Write to specific file"
-    echo "  ccswicher -g status           Show global status"
-    echo "  ccswicher status              Show project status"
+    echo "  ccswitcher -g -p <provider>    Set global provider"
+    echo "  ccswitcher -p <provider>       Set project provider"
+    echo "  ccswitcher -g -p <provider> -o <file>  Write to specific file"
+    echo "  ccswitcher -g status           Show global status"
+    echo "  ccswitcher status              Show project status"
     echo ""
     echo -e "${YELLOW}Commands:${NC}"
     echo "  status        Show current configuration"
@@ -714,11 +714,11 @@ show_help() {
     echo "  lmstudio      LM Studio local (uses LMSTUDIO_API_TOKEN)"
     echo ""
     echo -e "${YELLOW}Examples:${NC}"
-    echo "  ccswicher -g -p zai          # Use Z.AI globally"
-    echo "  ccswicher -p minimax         # Use MiniMax for this project"
-    echo "  ccswicher -g -p zai -o /tmp/test.json  # Write to test file"
-    echo "  ccswicher -g -p anthropic    # Reset to Claude Code official"
-    echo "  ccswicher status             # Show current config"
+    echo "  ccswitcher -g -p zai          # Use Z.AI globally"
+    echo "  ccswitcher -p minimax         # Use MiniMax for this project"
+    echo "  ccswitcher -g -p zai -o /tmp/test.json  # Write to test file"
+    echo "  ccswitcher -g -p anthropic    # Reset to Claude Code official"
+    echo "  ccswitcher status             # Show current config"
 }
 
 ############################################################

@@ -2,11 +2,11 @@
 set -euo pipefail
 
 # Claude Code Commander (ccc)
-# Repo-local launcher: switch model via ccswicher.sh and then exec `claude`
+# Repo-local launcher: switch model via ccswitcher.sh and then exec `claude`
 # This affects only the spawned `claude` process, not your parent shell.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
-CCM_CMD_DEFAULT="$SCRIPT_DIR/ccswicher.sh"
+CCM_CMD_DEFAULT="$SCRIPT_DIR/ccswitcher.sh"
 CCM="${CCM_CMD:-$CCM_CMD_DEFAULT}"
 
 usage() {
@@ -27,8 +27,8 @@ EOF
 }
 
 if [[ ! -f "$CCM" ]]; then
-    echo "ccc error: cannot find ccswicher CLI at $CCM" >&2
-    echo "Hint: ensure ccswicher.sh exists next to this script" >&2
+    echo "ccc error: cannot find ccswitcher CLI at $CCM" >&2
+    echo "Hint: ensure ccswitcher.sh exists next to this script" >&2
     exit 1
 fi
 

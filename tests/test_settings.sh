@@ -1,9 +1,9 @@
 #!/bin/bash
-# Test cases for ccswicher settings management functions
+# Test cases for ccswitcher settings management functions
 # Run: ./tests/test_settings.sh
 #
 # This test file contains copies of the functions being tested to allow
-# isolated testing without running the main ccswicher.sh script.
+# isolated testing without running the main ccswitcher.sh script.
 
 # Colors for output
 RED='\033[0;31m'
@@ -20,7 +20,7 @@ TESTS_FAILED=0
 TEST_DIR=""
 
 # ============================================
-# Functions under test (copied from ccswicher.sh)
+# Functions under test (copied from ccswitcher.sh)
 # ============================================
 
 # Shared helper: Escape string for JSON (handles quotes, backslashes, newlines)
@@ -42,7 +42,7 @@ backup_settings() {
     cp -f "$path" "${path}.bak.${ts}"
 }
 
-# ccswicher-managed env keys
+# ccswitcher-managed env keys
 CCSWICHER_ENV_KEYS=(
     "ANTHROPIC_BASE_URL"
     "ANTHROPIC_MODEL"
@@ -53,17 +53,17 @@ CCSWICHER_ENV_KEYS=(
     "ANTHROPIC_AUTH_TOKEN"
 )
 
-# Check if key is ccswicher-managed
-is_ccswicher_env_key() {
+# Check if key is ccswitcher-managed
+is_ccswitcher_env_key() {
     local key="$1"
-    for ccswicher_key in "${CCSWICHER_ENV_KEYS[@]}"; do
-        [[ "$key" == "$ccswicher_key" ]] && return 0
+    for ccswitcher_key in "${CCSWICHER_ENV_KEYS[@]}"; do
+        [[ "$key" == "$ccswitcher_key" ]] && return 0
     done
     return 1
 }
 
-# Shared helper: Write ccswicher settings file (pure bash, no dependencies)
-write_ccswicher_settings() {
+# Shared helper: Write ccswitcher settings file (pure bash, no dependencies)
+write_ccswitcher_settings() {
     local settings_path="$1"
     local provider="$2"
     local base_url="$3"
@@ -74,7 +74,7 @@ write_ccswicher_settings() {
     escaped_base=$(json_escape "$base_url")
     escaped_model=$(json_escape "$model")
 
-    # Extract existing non-ccswicher env keys and top-level keys from file if it exists
+    # Extract existing non-ccswitcher env keys and top-level keys from file if it exists
     local existing_env_pairs=""
     local existing_top_pairs=""
     if [[ -f "$settings_path" ]]; then
@@ -92,7 +92,7 @@ write_ccswicher_settings() {
                     in_env=0
                     continue
                 fi
-                # Skip ccswicher keys
+                # Skip ccswitcher keys
                 if [[ "$line" =~ \"ANTHROPIC_BASE_URL\" || "$line" =~ \"ANTHROPIC_MODEL\" || \
                       "$line" =~ \"ANTHROPIC_DEFAULT_ || "$line" =~ \"CLAUDE_CODE_SUBAGENT_MODEL\" || \
                       "$line" =~ \"ANTHROPIC_AUTH_TOKEN\" ]]; then
@@ -120,7 +120,7 @@ write_ccswicher_settings() {
         echo "{"
         echo "  \"env\": {"
 
-        # Add existing non-ccswicher env pairs first (with commas)
+        # Add existing non-ccswitcher env pairs first (with commas)
         if [[ -n "$existing_env_pairs" ]]; then
             while IFS= read -r pair; do
                 if [[ -n "$pair" ]]; then
@@ -129,7 +129,7 @@ write_ccswicher_settings() {
             done <<< "$existing_env_pairs"
         fi
 
-        # Add ccswicher env keys
+        # Add ccswitcher env keys
         echo "    \"ANTHROPIC_BASE_URL\": \"${escaped_base}\","
         echo "    \"ANTHROPIC_MODEL\": \"${escaped_model}\","
         echo "    \"ANTHROPIC_DEFAULT_SONNET_MODEL\": \"${escaped_model}\","
@@ -170,11 +170,11 @@ write_ccswicher_settings() {
     chmod 600 "$settings_path"
 }
 
-# Shared helper: Remove ccswicher-managed keys from settings, preserve others (pure bash)
-remove_ccswicher_settings() {
+# Shared helper: Remove ccswitcher-managed keys from settings, preserve others (pure bash)
+remove_ccswitcher_settings() {
     local settings_path="$1"
 
-    # Extract non-ccswicher env keys and other top-level keys
+    # Extract non-ccswitcher env keys and other top-level keys
     local env_pairs=()
     local other_pairs=()
     local in_env=0
@@ -189,11 +189,11 @@ remove_ccswicher_settings() {
                 in_env=0
                 continue
             fi
-            # Skip ccswicher-managed keys
+            # Skip ccswitcher-managed keys
             [[ "$line" =~ \"ANTHROPIC_BASE_URL\" || "$line" =~ \"ANTHROPIC_MODEL\" ]] && continue
             [[ "$line" =~ \"ANTHROPIC_DEFAULT_ || "$line" =~ \"CLAUDE_CODE_SUBAGENT_MODEL\" ]] && continue
             [[ "$line" =~ \"ANTHROPIC_AUTH_TOKEN\" ]] && continue
-            # Keep non-ccswicher key
+            # Keep non-ccswitcher key
             local trimmed="${line%,}"
             trimmed="${trimmed#"${trimmed%%[![:space:]]*}"}"
             [[ -n "$trimmed" && "$trimmed" =~ \" ]] && env_pairs+=("$trimmed")
@@ -422,13 +422,13 @@ test_json_escape_combined() {
     assert_equals 'He said \"path\\to\\file\"' "$result" "Escape quotes and backslashes"
 }
 
-test_write_ccswicher_settings_new_file() {
-    echo -e "\n${YELLOW}=== Test: write_ccswicher_settings new file ===${NC}"
+test_write_ccswitcher_settings_new_file() {
+    echo -e "\n${YELLOW}=== Test: write_ccswitcher_settings new file ===${NC}"
     setup
 
     local settings_file="$TEST_DIR/settings.json"
 
-    write_ccswicher_settings "$settings_file" "zai" "https://api.z.ai/api/anthropic" "glm-5" ""
+    write_ccswitcher_settings "$settings_file" "zai" "https://api.z.ai/api/anthropic" "glm-5" ""
 
     assert_file_contains "$settings_file" '"ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic"' "Contains base URL"
     assert_file_contains "$settings_file" '"ANTHROPIC_MODEL": "glm-5"' "Contains model"
@@ -437,21 +437,21 @@ test_write_ccswicher_settings_new_file() {
     teardown
 }
 
-test_write_ccswicher_settings_with_token() {
-    echo -e "\n${YELLOW}=== Test: write_ccswicher_settings with token ===${NC}"
+test_write_ccswitcher_settings_with_token() {
+    echo -e "\n${YELLOW}=== Test: write_ccswitcher_settings with token ===${NC}"
     setup
 
     local settings_file="$TEST_DIR/settings.json"
 
-    write_ccswicher_settings "$settings_file" "minimax" "https://api.minimax.io/anthropic" "MiniMax-M2.5" "sk-test-token"
+    write_ccswitcher_settings "$settings_file" "minimax" "https://api.minimax.io/anthropic" "MiniMax-M2.5" "sk-test-token"
 
     assert_file_contains "$settings_file" '"ANTHROPIC_AUTH_TOKEN": "sk-test-token"' "Contains token"
 
     teardown
 }
 
-test_write_ccswicher_settings_preserves_existing() {
-    echo -e "\n${YELLOW}=== Test: write_ccswicher_settings preserves existing keys ===${NC}"
+test_write_ccswitcher_settings_preserves_existing() {
+    echo -e "\n${YELLOW}=== Test: write_ccswitcher_settings preserves existing keys ===${NC}"
     setup
 
     local settings_file="$TEST_DIR/settings.json"
@@ -468,24 +468,24 @@ test_write_ccswicher_settings_preserves_existing() {
 }
 EOF
 
-    write_ccswicher_settings "$settings_file" "zai" "https://api.z.ai/api/anthropic" "glm-5" ""
+    write_ccswitcher_settings "$settings_file" "zai" "https://api.z.ai/api/anthropic" "glm-5" ""
 
     assert_file_contains "$settings_file" '"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"' "Preserved AGENT_TEAMS"
     assert_file_contains "$settings_file" '"CUSTOM_API_KEY": "my-secret-key"' "Preserved CUSTOM_API_KEY"
     assert_file_contains "$settings_file" '"SOME_OTHER_SETTING": "value"' "Preserved OTHER_SETTING"
-    assert_file_contains "$settings_file" '"ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic"' "Added ccswicher base URL"
-    assert_file_contains "$settings_file" '"ANTHROPIC_MODEL": "glm-5"' "Added ccswicher model"
+    assert_file_contains "$settings_file" '"ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic"' "Added ccswitcher base URL"
+    assert_file_contains "$settings_file" '"ANTHROPIC_MODEL": "glm-5"' "Added ccswitcher model"
 
     teardown
 }
 
-test_write_ccswicher_settings_overwrites_old_ccswicher_keys() {
-    echo -e "\n${YELLOW}=== Test: write_ccswicher_settings overwrites old ccswicher keys ===${NC}"
+test_write_ccswitcher_settings_overwrites_old_ccswitcher_keys() {
+    echo -e "\n${YELLOW}=== Test: write_ccswitcher_settings overwrites old ccswitcher keys ===${NC}"
     setup
 
     local settings_file="$TEST_DIR/settings.json"
 
-    # Create initial settings with old ccswicher values
+    # Create initial settings with old ccswitcher values
     cat > "$settings_file" << 'EOF'
 {
   "env": {
@@ -496,7 +496,7 @@ test_write_ccswicher_settings_overwrites_old_ccswicher_keys() {
 }
 EOF
 
-    write_ccswicher_settings "$settings_file" "new-provider" "https://new-url.com" "new-model" ""
+    write_ccswitcher_settings "$settings_file" "new-provider" "https://new-url.com" "new-model" ""
 
     assert_file_contains "$settings_file" '"ANTHROPIC_BASE_URL": "https://new-url.com"' "Updated base URL"
     assert_file_contains "$settings_file" '"ANTHROPIC_MODEL": "new-model"' "Updated model"
@@ -509,14 +509,14 @@ EOF
     teardown
 }
 
-test_write_ccswicher_settings_special_chars() {
-    echo -e "\n${YELLOW}=== Test: write_ccswicher_settings with special characters ===${NC}"
+test_write_ccswitcher_settings_special_chars() {
+    echo -e "\n${YELLOW}=== Test: write_ccswitcher_settings with special characters ===${NC}"
     setup
 
     local settings_file="$TEST_DIR/settings.json"
 
     # Test with URL containing special chars and token with special chars
-    write_ccswicher_settings "$settings_file" "test" "https://api.example.com/path?query=1" 'model"name' 'token"with"quotes'
+    write_ccswitcher_settings "$settings_file" "test" "https://api.example.com/path?query=1" 'model"name' 'token"with"quotes'
 
     assert_file_contains "$settings_file" 'https://api.example.com/path?query=1' "URL preserved"
     # Use literal search for escaped quotes (grep needs special handling)
@@ -525,13 +525,13 @@ test_write_ccswicher_settings_special_chars() {
     teardown
 }
 
-test_remove_ccswicher_settings_preserves_others() {
-    echo -e "\n${YELLOW}=== Test: remove_ccswicher_settings preserves non-ccswicher keys ===${NC}"
+test_remove_ccswitcher_settings_preserves_others() {
+    echo -e "\n${YELLOW}=== Test: remove_ccswitcher_settings preserves non-ccswitcher keys ===${NC}"
     setup
 
     local settings_file="$TEST_DIR/settings.json"
 
-    # Create settings with ccswicher and non-ccswicher keys
+    # Create settings with ccswitcher and non-ccswitcher keys
     cat > "$settings_file" << 'EOF'
 {
   "env": {
@@ -551,7 +551,7 @@ test_remove_ccswicher_settings_preserves_others() {
 EOF
 
     local result
-    result=$(remove_ccswicher_settings "$settings_file")
+    result=$(remove_ccswitcher_settings "$settings_file")
 
     assert_equals "preserved" "$result" "Returns 'preserved' when keys remain"
     assert_file_contains "$settings_file" '"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"' "Preserved AGENT_TEAMS"
@@ -559,7 +559,7 @@ EOF
     assert_file_contains "$settings_file" '"ANOTHER_KEY": "keep-this-too"' "Preserved ANOTHER_KEY"
     assert_file_contains "$settings_file" '"someOtherTopLevel": "value"' "Preserved top-level key"
 
-    # Check ccswicher keys are removed
+    # Check ccswitcher keys are removed
     local content
     content=$(cat "$settings_file")
     assert_not_contains "$content" "ANTHROPIC_BASE_URL" "Removed ANTHROPIC_BASE_URL"
@@ -568,13 +568,13 @@ EOF
     teardown
 }
 
-test_remove_ccswicher_settings_removes_file_when_empty() {
-    echo -e "\n${YELLOW}=== Test: remove_ccswicher_settings removes file when empty ===${NC}"
+test_remove_ccswitcher_settings_removes_file_when_empty() {
+    echo -e "\n${YELLOW}=== Test: remove_ccswitcher_settings removes file when empty ===${NC}"
     setup
 
     local settings_file="$TEST_DIR/settings.json"
 
-    # Create settings with only ccswicher keys
+    # Create settings with only ccswitcher keys
     cat > "$settings_file" << 'EOF'
 {
   "env": {
@@ -585,7 +585,7 @@ test_remove_ccswicher_settings_removes_file_when_empty() {
 EOF
 
     local result
-    result=$(remove_ccswicher_settings "$settings_file")
+    result=$(remove_ccswitcher_settings "$settings_file")
 
     assert_equals "removed" "$result" "Returns 'removed' when file is deleted"
 
@@ -601,14 +601,14 @@ EOF
     teardown
 }
 
-test_remove_ccswicher_settings_handles_nonexistent_file() {
-    echo -e "\n${YELLOW}=== Test: remove_ccswicher_settings handles nonexistent file ===${NC}"
+test_remove_ccswitcher_settings_handles_nonexistent_file() {
+    echo -e "\n${YELLOW}=== Test: remove_ccswitcher_settings handles nonexistent file ===${NC}"
     setup
 
     local settings_file="$TEST_DIR/nonexistent.json"
 
     # Should not error, just return
-    if remove_ccswicher_settings "$settings_file" 2>/dev/null; then
+    if remove_ccswitcher_settings "$settings_file" 2>/dev/null; then
         ((TESTS_RUN++))
         echo -e "${GREEN}PASS:${NC} Handles nonexistent file gracefully"
         ((TESTS_PASSED++))
@@ -637,14 +637,14 @@ test_roundtrip_preserve_settings() {
 }
 EOF
 
-    # Write ccswicher settings
-    write_ccswicher_settings "$settings_file" "zai" "https://api.z.ai/api/anthropic" "glm-5" "test-token"
+    # Write ccswitcher settings
+    write_ccswitcher_settings "$settings_file" "zai" "https://api.z.ai/api/anthropic" "glm-5" "test-token"
 
-    # Verify ccswicher settings were added
-    assert_file_contains "$settings_file" '"ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic"' "ccswicher settings added"
+    # Verify ccswitcher settings were added
+    assert_file_contains "$settings_file" '"ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic"' "ccswitcher settings added"
 
-    # Remove ccswicher settings
-    remove_ccswicher_settings "$settings_file"
+    # Remove ccswitcher settings
+    remove_ccswitcher_settings "$settings_file"
 
     # Verify original keys are preserved
     assert_file_contains "$settings_file" '"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"' "Original AGENT_TEAMS preserved"
@@ -653,8 +653,8 @@ EOF
     teardown
 }
 
-test_write_ccswicher_settings_empty_env() {
-    echo -e "\n${YELLOW}=== Test: write_ccswicher_settings with empty existing env ===${NC}"
+test_write_ccswitcher_settings_empty_env() {
+    echo -e "\n${YELLOW}=== Test: write_ccswitcher_settings with empty existing env ===${NC}"
     setup
 
     local settings_file="$TEST_DIR/settings.json"
@@ -667,15 +667,15 @@ test_write_ccswicher_settings_empty_env() {
 }
 EOF
 
-    write_ccswicher_settings "$settings_file" "minimax" "https://api.minimax.io/anthropic" "MiniMax-M2.5" ""
+    write_ccswitcher_settings "$settings_file" "minimax" "https://api.minimax.io/anthropic" "MiniMax-M2.5" ""
 
-    assert_file_contains "$settings_file" '"ANTHROPIC_MODEL": "MiniMax-M2.5"' "ccswicher model added"
+    assert_file_contains "$settings_file" '"ANTHROPIC_MODEL": "MiniMax-M2.5"' "ccswitcher model added"
     assert_file_contains "$settings_file" '"otherKey": "value"' "Other key preserved"
     teardown
 }
 
-test_write_ccswicher_settings_no_env_block() {
-    echo -e "\n${YELLOW}=== Test: write_ccswicher_settings with no existing env block ===${NC}"
+test_write_ccswitcher_settings_no_env_block() {
+    echo -e "\n${YELLOW}=== Test: write_ccswitcher_settings with no existing env block ===${NC}"
     setup
 
     local settings_file="$TEST_DIR/settings.json"
@@ -687,9 +687,9 @@ test_write_ccswicher_settings_no_env_block() {
 }
 EOF
 
-    write_ccswicher_settings "$settings_file" "minimax" "https://api.minimax.io/anthropic" "MiniMax-M2.5" ""
+    write_ccswitcher_settings "$settings_file" "minimax" "https://api.minimax.io/anthropic" "MiniMax-M2.5" ""
 
-    assert_file_contains "$settings_file" '"ANTHROPIC_MODEL": "MiniMax-M2.5"' "ccswicher model added"
+    assert_file_contains "$settings_file" '"ANTHROPIC_MODEL": "MiniMax-M2.5"' "ccswitcher model added"
     assert_file_contains "$settings_file" '"someKey": "someValue"' "Existing key preserved"
     teardown
 }
@@ -701,16 +701,16 @@ test_valid_json_output() {
     local settings_file="$TEST_DIR/settings.json"
 
     # Test write produces valid JSON
-    write_ccswicher_settings "$settings_file" "test" "https://api.test.com" "test-model" "test-token"
+    write_ccswitcher_settings "$settings_file" "test" "https://api.test.com" "test-model" "test-token"
 
     # Use Python to validate JSON (if available)
     if command -v python3 &>/dev/null; then
         ((TESTS_RUN++))
         if python3 -c "import json; json.load(open('$settings_file'))" 2>/dev/null; then
-            echo -e "${GREEN}PASS:${NC} write_ccswicher_settings produces valid JSON"
+            echo -e "${GREEN}PASS:${NC} write_ccswitcher_settings produces valid JSON"
             ((TESTS_PASSED++))
         else
-            echo -e "${RED}FAIL:${NC} write_ccswicher_settings produces invalid JSON"
+            echo -e "${RED}FAIL:${NC} write_ccswitcher_settings produces invalid JSON"
             cat "$settings_file"
             ((TESTS_FAILED++))
         fi
@@ -727,15 +727,15 @@ test_valid_json_output() {
 }
 EOF
 
-    write_ccswicher_settings "$settings_file" "test" "https://api.test.com" "test-model" ""
+    write_ccswitcher_settings "$settings_file" "test" "https://api.test.com" "test-model" ""
 
     if command -v python3 &>/dev/null; then
         ((TESTS_RUN++))
         if python3 -c "import json; json.load(open('$settings_file'))" 2>/dev/null; then
-            echo -e "${GREEN}PASS:${NC} write_ccswicher_settings with existing keys produces valid JSON"
+            echo -e "${GREEN}PASS:${NC} write_ccswitcher_settings with existing keys produces valid JSON"
             ((TESTS_PASSED++))
         else
-            echo -e "${RED}FAIL:${NC} write_ccswicher_settings with existing keys produces invalid JSON"
+            echo -e "${RED}FAIL:${NC} write_ccswitcher_settings with existing keys produces invalid JSON"
             cat "$settings_file"
             ((TESTS_FAILED++))
         fi
@@ -749,7 +749,7 @@ EOF
 
 main() {
     echo -e "${YELLOW}============================================${NC}"
-    echo -e "${YELLOW}ccswicher Settings Management Test Suite${NC}"
+    echo -e "${YELLOW}ccswitcher Settings Management Test Suite${NC}"
     echo -e "${YELLOW}============================================${NC}"
 
     # Run all tests
@@ -760,17 +760,17 @@ main() {
     test_json_escape_tab
     test_json_escape_combined
 
-    test_write_ccswicher_settings_new_file
-    test_write_ccswicher_settings_with_token
-    test_write_ccswicher_settings_preserves_existing
-    test_write_ccswicher_settings_overwrites_old_ccswicher_keys
-    test_write_ccswicher_settings_special_chars
-    test_write_ccswicher_settings_empty_env
-    test_write_ccswicher_settings_no_env_block
+    test_write_ccswitcher_settings_new_file
+    test_write_ccswitcher_settings_with_token
+    test_write_ccswitcher_settings_preserves_existing
+    test_write_ccswitcher_settings_overwrites_old_ccswitcher_keys
+    test_write_ccswitcher_settings_special_chars
+    test_write_ccswitcher_settings_empty_env
+    test_write_ccswitcher_settings_no_env_block
 
-    test_remove_ccswicher_settings_preserves_others
-    test_remove_ccswicher_settings_removes_file_when_empty
-    test_remove_ccswicher_settings_handles_nonexistent_file
+    test_remove_ccswitcher_settings_preserves_others
+    test_remove_ccswitcher_settings_removes_file_when_empty
+    test_remove_ccswitcher_settings_handles_nonexistent_file
 
     test_roundtrip_preserve_settings
     test_valid_json_output
