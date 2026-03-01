@@ -16,7 +16,7 @@ set -euo pipefail
 
 # Constants
 # Version - update this when creating a new release tag
-VERSION="1.0.1"
+VERSION="1.0.2"
 REPO_RAW="https://raw.githubusercontent.com/atom2ueki/cc-switcher/main"
 REPO_API="https://api.github.com/repos/atom2ueki/cc-switcher"
 PROVIDERS_URL="${REPO_RAW}/providers.json"
