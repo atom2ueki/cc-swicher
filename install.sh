@@ -233,7 +233,7 @@ append_function_block() {
   [[ -f "$rc" ]] || touch "$rc"
   cat >> "$rc" <<EOF
 $BEGIN_MARK
-# ccswitcher: define a shell function that applies exports to current shell
+# ccswitcher: shell function wrapper
 unalias ccswitcher 2>/dev/null || true
 unset -f ccswitcher 2>/dev/null || true
 ccswitcher() {
@@ -252,14 +252,7 @@ ccswitcher() {
     return 1
   fi
 
-  case "\$1" in
-    ""|"help"|"-h"|"--help"|"status"|"st"|"list"|"-v"|"--version"|"version"|"upgrade"|"config"|"cfg"|"project"|"user")
-      "\$script" "\$@"
-      ;;
-    *)
-      eval "\$("\$script" "\$@")"
-      ;;
-  esac
+  "\$script" "\$@"
 }
 $END_MARK
 EOF

@@ -16,7 +16,7 @@ set -euo pipefail
 
 # Constants
 # Version - update this when creating a new release tag
-VERSION="1.0.8"
+VERSION="1.0.9"
 REPO_API="https://api.github.com/repos/atom2ueki/cc-switcher"
 
 # Color definitions
