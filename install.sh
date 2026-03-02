@@ -323,16 +323,24 @@ download_from_github() {
 install_assets() {
   local data_dir="$1"
   local dest_ccswitcher_sh="$data_dir/ccswitcher.sh"
+  local dest_providers_json="$data_dir/providers.json"
 
   run_cmd "$data_dir" mkdir -p "$data_dir"
 
   if $LOCAL_MODE && [[ -f "$SCRIPT_DIR/ccswitcher.sh" ]]; then
     log_info "Installing from local directory..."
     run_cmd "$data_dir" cp -f "$SCRIPT_DIR/ccswitcher.sh" "$dest_ccswitcher_sh"
+    if [[ -f "$SCRIPT_DIR/providers.json" ]]; then
+      run_cmd "$data_dir" cp -f "$SCRIPT_DIR/providers.json" "$dest_providers_json"
+    fi
   else
     log_info "Installing from GitHub..."
     download_from_github "${GITHUB_RAW}/ccswitcher.sh" "$dest_ccswitcher_sh" || {
       log_error "failed to download ccswitcher.sh"
+      exit 1
+    }
+    download_from_github "${GITHUB_RAW}/providers.json" "$dest_providers_json" || {
+      log_error "failed to download providers.json"
       exit 1
     }
   fi

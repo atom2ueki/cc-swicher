@@ -16,13 +16,8 @@ set -euo pipefail
 
 # Constants
 # Version - update this when creating a new release tag
-VERSION="1.0.5"
-REPO_RAW="https://raw.githubusercontent.com/atom2ueki/cc-switcher/main"
+VERSION="1.0.8"
 REPO_API="https://api.github.com/repos/atom2ueki/cc-switcher"
-PROVIDERS_URL="${REPO_RAW}/providers.json"
-CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/ccswitcher"
-CACHE_FILE="$CACHE_DIR/providers.json"
-CACHE_TTL=86400  # 24 hours
 
 # Color definitions
 RED='\033[0;31m'
@@ -87,45 +82,11 @@ mask_token() {
 ############################################################
 
 fetch_providers() {
-    mkdir -p "$CACHE_DIR"
-
-    # Determine script directory for local fallback
+    # Use local providers.json from script directory (bundled with version)
     local script_dir
     script_dir="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
     local local_config="$script_dir/providers.json"
 
-    local use_cache=false
-    if [[ -f "$CACHE_FILE" ]]; then
-        local cache_age
-        cache_age=$(( $(date +%s) - $(stat -c %Y "$CACHE_FILE" 2>/dev/null || stat -f %m "$CACHE_FILE" 2>/dev/null || echo 0) ))
-        if (( cache_age < CACHE_TTL )); then
-            use_cache=true
-        fi
-    fi
-
-    if $use_cache; then
-        cat "$CACHE_FILE"
-        return 0
-    fi
-
-    # Try remote fetch
-    local success=false
-    if command -v curl &>/dev/null; then
-        if curl -fsSL --connect-timeout 5 "$PROVIDERS_URL" -o "$CACHE_FILE" 2>/dev/null; then
-            success=true
-        fi
-    elif command -v wget &>/dev/null; then
-        if wget -qO "$CACHE_FILE" --timeout=5 "$PROVIDERS_URL" 2>/dev/null; then
-            success=true
-        fi
-    fi
-
-    if $success && [[ -s "$CACHE_FILE" ]]; then
-        cat "$CACHE_FILE"
-        return 0
-    fi
-
-    # Fall back to local providers.json
     if [[ -f "$local_config" ]]; then
         cat "$local_config"
         return 0
@@ -672,8 +633,9 @@ upgrade_self() {
     fi
 
     # Find where we're installed
-    local script_path
-    script_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/ccswitcher.sh"
+    local script_dir
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local script_path="$script_dir/ccswitcher.sh"
 
     if [[ ! -w "$script_path" ]]; then
         log_warn "Need sudo to write to $script_path"
@@ -685,8 +647,28 @@ upgrade_self() {
     chmod +x "$script_path"
     rm -f "$tmp_script"
 
-    # Also update providers cache
-    rm -f "$CACHE_FILE"
+    # Also download providers.json
+    local providers_url="https://raw.githubusercontent.com/atom2ueki/cc-switcher/${remote_version}/providers.json"
+    local tmp_providers
+    tmp_providers=$(mktemp)
+    local providers_ok=false
+    if command -v curl &>/dev/null; then
+        curl -fsSL "$providers_url" -o "$tmp_providers" 2>/dev/null && providers_ok=true
+    elif command -v wget &>/dev/null; then
+        wget -qO "$tmp_providers" "$providers_url" 2>/dev/null && providers_ok=true
+    fi
+
+    if $providers_ok && [[ -s "$tmp_providers" ]]; then
+        local providers_path="$script_dir/providers.json"
+        if [[ ! -w "$script_dir" ]]; then
+            sudo cp "$tmp_providers" "$providers_path"
+        else
+            cp "$tmp_providers" "$providers_path"
+        fi
+    else
+        log_warn "Could not download providers.json"
+    fi
+    rm -f "$tmp_providers"
 
     log_info "Upgrade complete!"
 }
@@ -759,7 +741,7 @@ main() {
                 output_path="${1:-}"
                 shift
                 ;;
-            status|list|upgrade|help|-h|--help)
+            status|list|upgrade|version|-v|--version|help|-h|--help)
                 command="$1"
                 shift
                 ;;
