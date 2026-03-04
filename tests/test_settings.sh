@@ -74,44 +74,63 @@ write_ccswitcher_settings() {
     escaped_base=$(json_escape "$base_url")
     escaped_model=$(json_escape "$model")
 
-    # Extract existing non-ccswitcher env keys and top-level keys from file if it exists
+    # Extract existing non-ccswitcher env keys and non-env content from file if it exists
     local existing_env_pairs=""
-    local existing_top_pairs=""
+    local other_content=""
     if [[ -f "$settings_path" ]]; then
         local in_env=0
+        local env_depth=0
+        local doc_depth=0
         while IFS= read -r line || [[ -n "$line" ]]; do
-            # Skip opening/closing braces
-            [[ "$line" =~ ^\{[[:space:]]*$ || "$line" =~ ^\}[[:space:]]*$ ]] && continue
+            [[ -z "$line" ]] && continue
+
+            # Count braces for depth tracking
+            local opens="${line//[^\{]/}"
+            local closes="${line//[^\}]/}"
+            local prev_depth=$doc_depth
+            (( doc_depth += ${#opens} - ${#closes} )) || true
 
             if [[ "$line" =~ \"env\"[[:space:]]*:[[:space:]]*\{ ]]; then
-                in_env=1
+                env_depth=${#opens}
+                (( env_depth -= ${#closes} )) || true
+                if (( env_depth > 0 )); then
+                    in_env=1
+                fi
+                # env self-contained on one line (e.g. "env": {})
                 continue
             fi
             if [[ $in_env -eq 1 ]]; then
-                if [[ "$line" =~ ^[[:space:]]*\}[[:space:]]*[,[:space:]]*$ ]]; then
+                (( env_depth += ${#opens} - ${#closes} )) || true
+                if (( env_depth <= 0 )); then
                     in_env=0
                     continue
                 fi
-                # Skip ccswitcher keys
+                # Skip ccswitcher keys but keep others
                 if [[ "$line" =~ \"ANTHROPIC_BASE_URL\" || "$line" =~ \"ANTHROPIC_MODEL\" || \
                       "$line" =~ \"ANTHROPIC_DEFAULT_ || "$line" =~ \"CLAUDE_CODE_SUBAGENT_MODEL\" || \
                       "$line" =~ \"ANTHROPIC_AUTH_TOKEN\" ]]; then
                     continue
                 fi
-                # Extract key-value pair (keep the whole line, just trim whitespace and comma)
                 local trimmed="${line#"${line%%[![:space:]]*}"}"
                 trimmed="${trimmed%,}"
                 if [[ -n "$trimmed" && "$trimmed" =~ \" ]]; then
                     existing_env_pairs="${existing_env_pairs}${trimmed}"$'\n'
                 fi
-            else
-                # Top-level keys (outside env block)
-                local trimmed="${line#"${line%%[![:space:]]*}"}"
-                trimmed="${trimmed%,}"
-                if [[ -n "$trimmed" && "$trimmed" =~ \" ]]; then
-                    existing_top_pairs="${existing_top_pairs}${trimmed}"$'\n'
-                fi
+                continue
             fi
+
+            # Skip only outer document braces
+            local cleaned="${line#"${line%%[![:space:]]*}"}"
+            cleaned="${cleaned%"${cleaned##*[![:space:]]}"}"
+            [[ -z "$cleaned" ]] && continue
+            if [[ "$cleaned" == "{" ]] && (( prev_depth == 0 )); then
+                continue
+            fi
+            if [[ "$cleaned" == "}" ]] && (( doc_depth == 0 )); then
+                continue
+            fi
+
+            other_content+="$line"$'\n'
         done < "$settings_path"
     fi
 
@@ -143,25 +162,15 @@ write_ccswitcher_settings() {
             echo "    \"CLAUDE_CODE_SUBAGENT_MODEL\": \"${escaped_model}\""
         fi
 
-        echo "  }"
-
-        # Add existing top-level keys after env (last item has no comma)
-        if [[ -n "$existing_top_pairs" ]]; then
-            # Convert to array for proper comma handling
-            local top_array=()
-            while IFS= read -r pair; do
-                [[ -n "$pair" ]] && top_array+=("$pair")
-            done <<< "$existing_top_pairs"
-
-            local i=0
-            for pair in "${top_array[@]}"; do
-                ((i++))
-                if [[ $i -lt ${#top_array[@]} ]]; then
-                    echo "  ${pair},"
-                else
-                    echo "  ${pair}"
-                fi
-            done
+        if [[ -n "$other_content" ]]; then
+            echo "  },"
+            # Strip leading/trailing standalone commas and trailing comma from last line
+            other_content=$(echo "$other_content" | sed '/^[[:space:]]*,[[:space:]]*$/d' | sed '$ s/,[[:space:]]*$//')
+            while IFS= read -r line; do
+                [[ -n "$line" ]] && echo "$line"
+            done <<< "$other_content"
+        else
+            echo "  }"
         fi
 
         echo "}"
@@ -174,18 +183,33 @@ write_ccswitcher_settings() {
 remove_ccswitcher_settings() {
     local settings_path="$1"
 
-    # Extract non-ccswitcher env keys and other top-level keys
+    # Extract non-ccswitcher env keys and other non-env content
     local env_pairs=()
-    local other_pairs=()
+    local other_content=""
     local in_env=0
+    local env_depth=0
+    local doc_depth=0
 
     while IFS= read -r line || [[ -n "$line" ]]; do
+        [[ -z "$line" ]] && continue
+
+        # Count braces for depth tracking
+        local opens="${line//[^\{]/}"
+        local closes="${line//[^\}]/}"
+        local prev_depth=$doc_depth
+        (( doc_depth += ${#opens} - ${#closes} )) || true
+
         if [[ "$line" =~ \"env\"[[:space:]]*:[[:space:]]*\{ ]]; then
-            in_env=1
+            env_depth=${#opens}
+            (( env_depth -= ${#closes} )) || true
+            if (( env_depth > 0 )); then
+                in_env=1
+            fi
             continue
         fi
         if [[ $in_env -eq 1 ]]; then
-            if [[ "$line" =~ ^[[:space:]]*\}[[:space:]]*[,[:space:]]*$ ]]; then
+            (( env_depth += ${#opens} - ${#closes} )) || true
+            if (( env_depth <= 0 )); then
                 in_env=0
                 continue
             fi
@@ -197,42 +221,53 @@ remove_ccswitcher_settings() {
             local trimmed="${line%,}"
             trimmed="${trimmed#"${trimmed%%[![:space:]]*}"}"
             [[ -n "$trimmed" && "$trimmed" =~ \" ]] && env_pairs+=("$trimmed")
-        else
-            # Outside env block
-            [[ "$line" =~ ^\{[[:space:]]*$ || "$line" =~ ^\}[[:space:]]*$ ]] && continue
-            local trimmed="${line%,}"
-            trimmed="${trimmed#"${trimmed%%[![:space:]]*}"}"
-            [[ -n "$trimmed" && "$trimmed" =~ \" ]] && other_pairs+=("$trimmed")
+            continue
         fi
+
+        # Skip only outer document braces
+        local cleaned="${line#"${line%%[![:space:]]*}"}"
+        cleaned="${cleaned%"${cleaned##*[![:space:]]}"}"
+        [[ -z "$cleaned" ]] && continue
+        if [[ "$cleaned" == "{" ]] && (( prev_depth == 0 )); then
+            continue
+        fi
+        if [[ "$cleaned" == "}" ]] && (( doc_depth == 0 )); then
+            continue
+        fi
+
+        other_content+="$line"$'\n'
     done < "$settings_path"
 
     # If nothing left, remove the file
-    if [[ ${#env_pairs[@]} -eq 0 && ${#other_pairs[@]} -eq 0 ]]; then
+    if [[ ${#env_pairs[@]} -eq 0 && -z "$other_content" ]]; then
         rm -f "$settings_path"
         echo "removed"
         return
     fi
 
     # Rebuild JSON
-    local total=$(( ${#other_pairs[@]} + (${#env_pairs[@]} > 0 ? 1 : 0) ))
-    local count=0
-
     {
         echo "{"
 
-        # Add other top-level keys
-        for pair in "${other_pairs[@]}"; do
-            ((count++))
-            if [[ $count -lt $total ]]; then
-                echo "  ${pair},"
+        # Add non-env content as raw block
+        if [[ -n "$other_content" ]]; then
+            # Strip standalone comma lines and trailing comma from last line
+            other_content=$(echo "$other_content" | sed '/^[[:space:]]*,[[:space:]]*$/d' | sed '$ s/,[[:space:]]*$//')
+            if [[ ${#env_pairs[@]} -gt 0 ]]; then
+                # More content coming, emit lines then a comma separator
+                while IFS= read -r line; do
+                    [[ -n "$line" ]] && echo "$line"
+                done <<< "$other_content"
+                echo ","
             else
-                echo "  ${pair}"
+                while IFS= read -r line; do
+                    [[ -n "$line" ]] && echo "$line"
+                done <<< "$other_content"
             fi
-        done
+        fi
 
         # Add env block if there are env keys
         if [[ ${#env_pairs[@]} -gt 0 ]]; then
-            ((count++))
             echo "  \"env\": {"
             local env_count=0
             for pair in "${env_pairs[@]}"; do
@@ -694,6 +729,274 @@ EOF
     teardown
 }
 
+test_write_ccswitcher_settings_with_permissions_block() {
+    echo -e "\n${YELLOW}=== Test: write_ccswitcher_settings preserves permissions with nested arrays ===${NC}"
+    setup
+
+    local settings_file="$TEST_DIR/settings.json"
+
+    # Create settings matching real-world .claude/settings.local.json with permissions block
+    cat > "$settings_file" << 'EOF'
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch",
+      "Bash(git:*)",
+      "Bash(gh:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "mcp__plugin_github_github__*"
+    ]
+  }
+}
+EOF
+
+    write_ccswitcher_settings "$settings_file" "zai" "https://api.z.ai/api/anthropic" "glm-5" ""
+
+    # Verify provider settings were added
+    assert_file_contains "$settings_file" '"ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic"' "Provider base URL added"
+    assert_file_contains "$settings_file" '"ANTHROPIC_MODEL": "glm-5"' "Provider model added"
+
+    # Verify existing env key preserved
+    assert_file_contains "$settings_file" '"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"' "Existing env key preserved"
+
+    # Verify permissions block is fully preserved
+    assert_file_contains "$settings_file" '"permissions"' "permissions key preserved"
+    assert_file_contains "$settings_file" '"allow"' "allow key preserved"
+    assert_file_contains "$settings_file" '"WebSearch"' "WebSearch permission preserved"
+    assert_file_contains "$settings_file" '"Bash(git:\*)"' "Bash permission preserved"
+    assert_file_contains "$settings_file" '"mcp__plugin_github_github__\*"' "MCP permission preserved"
+
+    # CRITICAL: Validate JSON structure - the closing braces must be correct
+    if command -v python3 &>/dev/null; then
+        ((TESTS_RUN++))
+        if python3 -c "import json; json.load(open('$settings_file'))" 2>/dev/null; then
+            echo -e "${GREEN}PASS:${NC} Output is valid JSON with permissions block"
+            ((TESTS_PASSED++))
+        else
+            echo -e "${RED}FAIL:${NC} Output is INVALID JSON - permissions block corrupted"
+            echo -e "  File contents:"
+            cat "$settings_file"
+            ((TESTS_FAILED++))
+        fi
+    fi
+
+    teardown
+}
+
+test_remove_ccswitcher_settings_with_permissions_block() {
+    echo -e "\n${YELLOW}=== Test: remove_ccswitcher_settings preserves permissions with nested arrays ===${NC}"
+    setup
+
+    local settings_file="$TEST_DIR/settings.json"
+
+    # Create settings with both ccswitcher keys and permissions block
+    cat > "$settings_file" << 'EOF'
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic",
+    "ANTHROPIC_MODEL": "glm-5",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-5",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-5",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-5",
+    "CLAUDE_CODE_SUBAGENT_MODEL": "glm-5",
+    "ANTHROPIC_AUTH_TOKEN": "test-token"
+  },
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch",
+      "Bash(git:*)",
+      "Bash(gh:*)",
+      "Bash(npm:*)",
+      "mcp__plugin_github_github__*"
+    ]
+  }
+}
+EOF
+
+    local result
+    result=$(remove_ccswitcher_settings "$settings_file")
+
+    assert_equals "preserved" "$result" "Returns 'preserved' when permissions remain"
+
+    # Verify ccswitcher keys are removed
+    local content
+    content=$(cat "$settings_file")
+    assert_not_contains "$content" "ANTHROPIC_BASE_URL" "Removed ANTHROPIC_BASE_URL"
+    assert_not_contains "$content" "ANTHROPIC_MODEL" "Removed ANTHROPIC_MODEL"
+
+    # Verify env key preserved
+    assert_file_contains "$settings_file" '"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"' "Env key preserved"
+
+    # Verify permissions block is fully preserved
+    assert_file_contains "$settings_file" '"permissions"' "permissions key preserved"
+    assert_file_contains "$settings_file" '"allow"' "allow key preserved"
+    assert_file_contains "$settings_file" '"WebSearch"' "WebSearch preserved"
+    assert_file_contains "$settings_file" '"Bash(git:\*)"' "Bash permission preserved"
+
+    # CRITICAL: Validate JSON structure
+    if command -v python3 &>/dev/null; then
+        ((TESTS_RUN++))
+        if python3 -c "import json; json.load(open('$settings_file'))" 2>/dev/null; then
+            echo -e "${GREEN}PASS:${NC} Output is valid JSON after removing ccswitcher keys"
+            ((TESTS_PASSED++))
+        else
+            echo -e "${RED}FAIL:${NC} Output is INVALID JSON - permissions block corrupted after removal"
+            echo -e "  File contents:"
+            cat "$settings_file"
+            ((TESTS_FAILED++))
+        fi
+    fi
+
+    teardown
+}
+
+test_roundtrip_with_permissions_block() {
+    echo -e "\n${YELLOW}=== Test: Roundtrip with permissions block produces valid JSON ===${NC}"
+    setup
+
+    local settings_file="$TEST_DIR/settings.json"
+
+    # Create original settings matching real-world config
+    cat > "$settings_file" << 'EOF'
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch",
+      "Bash(git:*)",
+      "Bash(gh:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(pnpm:*)",
+      "Bash(curl:*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(tree:*)",
+      "Bash(jq:*)",
+      "Bash(chmod:*)",
+      "Bash(python3:*)",
+      "mcp__plugin_github_github__*",
+      "mcp__plugin_supabase_supabase__*",
+      "mcp__plugin_context7_context7__*"
+    ]
+  }
+}
+EOF
+
+    # Write ccswitcher settings (switch to provider)
+    write_ccswitcher_settings "$settings_file" "zai" "https://api.z.ai/api/anthropic" "glm-5" "test-token"
+
+    # Validate JSON after write
+    if command -v python3 &>/dev/null; then
+        ((TESTS_RUN++))
+        if python3 -c "import json; json.load(open('$settings_file'))" 2>/dev/null; then
+            echo -e "${GREEN}PASS:${NC} Valid JSON after provider write"
+            ((TESTS_PASSED++))
+        else
+            echo -e "${RED}FAIL:${NC} Invalid JSON after provider write"
+            echo -e "  File contents:"
+            cat "$settings_file"
+            ((TESTS_FAILED++))
+        fi
+    fi
+
+    # Verify permissions still present after write
+    assert_file_contains "$settings_file" '"permissions"' "permissions key present after write"
+    assert_file_contains "$settings_file" '"allow"' "allow key present after write"
+    assert_file_contains "$settings_file" '"WebSearch"' "WebSearch present after write"
+
+    # Remove ccswitcher settings (switch to anthropic)
+    remove_ccswitcher_settings "$settings_file"
+
+    # Validate JSON after remove
+    if command -v python3 &>/dev/null; then
+        ((TESTS_RUN++))
+        if python3 -c "import json; json.load(open('$settings_file'))" 2>/dev/null; then
+            echo -e "${GREEN}PASS:${NC} Valid JSON after provider removal"
+            ((TESTS_PASSED++))
+        else
+            echo -e "${RED}FAIL:${NC} Invalid JSON after provider removal"
+            echo -e "  File contents:"
+            cat "$settings_file"
+            ((TESTS_FAILED++))
+        fi
+    fi
+
+    # Verify permissions still present after remove
+    assert_file_contains "$settings_file" '"permissions"' "permissions key present after remove"
+    assert_file_contains "$settings_file" '"WebSearch"' "WebSearch present after remove"
+
+    # Verify env preserved
+    assert_file_contains "$settings_file" '"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"' "Env key preserved through roundtrip"
+
+    teardown
+}
+
+test_write_ccswitcher_settings_with_nested_objects() {
+    echo -e "\n${YELLOW}=== Test: write_ccswitcher_settings preserves deeply nested objects ===${NC}"
+    setup
+
+    local settings_file="$TEST_DIR/settings.json"
+
+    # Create settings with multiple levels of nesting
+    cat > "$settings_file" << 'EOF'
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(git:*)"
+    ]
+  },
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"]
+    }
+  }
+}
+EOF
+
+    write_ccswitcher_settings "$settings_file" "zai" "https://api.z.ai/api/anthropic" "glm-5" ""
+
+    # Verify provider settings added
+    assert_file_contains "$settings_file" '"ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic"' "Provider added"
+
+    # Verify all nested structures preserved
+    assert_file_contains "$settings_file" '"permissions"' "permissions preserved"
+    assert_file_contains "$settings_file" '"mcpServers"' "mcpServers preserved"
+    assert_file_contains "$settings_file" '"github"' "github nested object preserved"
+    assert_file_contains "$settings_file" '"command": "npx"' "command value preserved"
+
+    # CRITICAL: Validate JSON
+    if command -v python3 &>/dev/null; then
+        ((TESTS_RUN++))
+        if python3 -c "import json; json.load(open('$settings_file'))" 2>/dev/null; then
+            echo -e "${GREEN}PASS:${NC} Valid JSON with nested objects"
+            ((TESTS_PASSED++))
+        else
+            echo -e "${RED}FAIL:${NC} Invalid JSON - nested objects corrupted"
+            echo -e "  File contents:"
+            cat "$settings_file"
+            ((TESTS_FAILED++))
+        fi
+    fi
+
+    teardown
+}
+
 test_valid_json_output() {
     echo -e "\n${YELLOW}=== Test: Valid JSON output ===${NC}"
     setup
@@ -774,6 +1077,11 @@ main() {
 
     test_roundtrip_preserve_settings
     test_valid_json_output
+
+    test_write_ccswitcher_settings_with_permissions_block
+    test_remove_ccswitcher_settings_with_permissions_block
+    test_roundtrip_with_permissions_block
+    test_write_ccswitcher_settings_with_nested_objects
 
     # Summary
     echo -e "\n${YELLOW}============================================${NC}"

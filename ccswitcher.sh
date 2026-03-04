@@ -16,7 +16,7 @@ set -euo pipefail
 
 # Constants
 # Version - update this when creating a new release tag
-VERSION="1.0.9"
+VERSION="1.0.10"
 REPO_API="https://api.github.com/repos/atom2ueki/cc-switcher"
 
 # Color definitions
@@ -292,42 +292,50 @@ get_other_env_keys() {
 get_non_env_content() {
     local settings="$1"
     local in_env=false
-    local depth=0
+    local env_depth=0
+    local doc_depth=0
     local result=""
 
     while IFS= read -r line; do
         # Skip empty lines
         [[ -z "$line" ]] && continue
 
+        # Count braces on this line for document depth tracking
+        local opens="${line//[^\{]/}"
+        local closes="${line//[^\}]/}"
+        local prev_depth=$doc_depth
+        (( doc_depth += ${#opens} - ${#closes} )) || true
+
         if [[ "$line" == *'"env"'*:*'{'* ]]; then
-            in_env=true
-            depth=1
+            env_depth=${#opens}
+            (( env_depth -= ${#closes} )) || true
+            if (( env_depth > 0 )); then
+                in_env=true
+            fi
             continue
         fi
         if $in_env; then
-            if [[ "$line" == *'{'* ]]; then
-                ((depth++)) || true
-            fi
-            if [[ "$line" == *'}'* ]]; then
-                ((depth--)) || true
-                if (( depth <= 0 )); then
-                    in_env=false
-                fi
+            (( env_depth += ${#opens} - ${#closes} )) || true
+            if (( env_depth <= 0 )); then
+                in_env=false
             fi
             continue
         fi
 
-        # Clean the line
+        # Trim the line for checking
         local cleaned="${line#"${line%%[![:space:]]*}"}"
         cleaned="${cleaned%"${cleaned##*[![:space:]]}"}"
-
-        # Skip braces and empty
-        [[ "$cleaned" == "{" ]] && continue
-        [[ "$cleaned" == "}" ]] && continue
-        [[ "$cleaned" == "{}" ]] && continue
         [[ -z "$cleaned" ]] && continue
 
-        result+="$cleaned"$'\n'
+        # Skip only the outer document braces
+        if [[ "$cleaned" == "{" ]] && (( prev_depth == 0 )); then
+            continue
+        fi
+        if [[ "$cleaned" == "}" ]] && (( doc_depth == 0 )); then
+            continue
+        fi
+
+        result+="$line"$'\n'
     done <<< "$settings"
 
     echo "$result"
@@ -394,9 +402,12 @@ rebuild_settings() {
 
     # Add non-env content if exists
     if [[ -n "$non_env" ]]; then
+        # Strip trailing comma from last line (in case env was last in original)
+        non_env=$(echo "$non_env" | sed '$ s/,[[:space:]]*$//')
         result+=",\n"
-        # Add each line with proper formatting
+        # Add each line preserving original content
         while IFS= read -r line; do
+            [[ -z "$line" ]] && continue
             result+="$line\n"
         done <<< "$non_env"
     else
