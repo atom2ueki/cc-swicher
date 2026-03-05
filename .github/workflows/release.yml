@@ -5,6 +5,9 @@ on:
     tags:
       - '**'
 
+permissions:
+  contents: write
+
 jobs:
   release:
     runs-on: macos-latest
@@ -36,6 +39,5 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           artifacts: "release/*"
-          artifactUploadFailedMessage: "Could not upload artifacts"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
