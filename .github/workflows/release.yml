@@ -45,7 +45,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ github.ref_name }}
-          artifacts: "release/ccswitcher-*"
+          artifacts: "release/ccswitcher-*,release/providers.json"
           allowUpdates: true
           replaceExistingArtifacts: true
         env:

@@ -101,12 +101,19 @@ mkdir -p "$INSTALL_DIR"
 # Download binary with platform suffix
 BINARY_URL="https://github.com/${REPO}/releases/download/${VERSION}/ccswitcher-${TARGET}"
 echo "Downloading binary..."
-curl -fsSL "$BINARY_URL" -o "${INSTALL_DIR}/ccswitcher"
+curl -fsSL -L "$BINARY_URL" -o "${INSTALL_DIR}/ccswitcher" || {
+    echo "Error: Failed to download binary from $BINARY_URL"
+    echo "Please check if the release exists and contains the binary for your platform."
+    exit 1
+}
 chmod +x "${INSTALL_DIR}/ccswitcher"
 
 # Download providers.json
 PROVIDERS_URL="https://github.com/${REPO}/releases/download/${VERSION}/providers.json"
-curl -fsSL "$PROVIDERS_URL" -o "${INSTALL_DIR}/providers.json"
+curl -fsSL -L "$PROVIDERS_URL" -o "${INSTALL_DIR}/providers.json" || {
+    echo "Warning: Failed to download providers.json, creating default..."
+    echo '{"version":"1.0.0","providers":{}}' > "${INSTALL_DIR}/providers.json"
+}
 
 # Add to PATH if not already there
 SHELL_RC="${HOME}/.zshrc"

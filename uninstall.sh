@@ -20,10 +20,17 @@ fi
 # Remove PATH export from .zshrc
 if [[ -f "${HOME}/.zshrc" ]]; then
     # Remove ccswitcher block (between # ccswitcher and # end ccswitcher)
-    sed -i '' '/# ccswitcher/,/# end ccswitcher/d' "${HOME}/.zshrc"
-    # Clean up empty lines
-    sed -i '' '/^$/N;/^\n$/d' "${HOME}/.zshrc"
+    sed -i '/# ccswitcher/,/# end ccswitcher/d' "${HOME}/.zshrc"
+    # Clean up empty lines (works on both macOS and Linux)
+    sed -i '/^$/N;/^\n$/d' "${HOME}/.zshrc"
     echo "Removed ccswitcher from ~/.zshrc"
+fi
+
+# Also handle .bashrc for Linux users
+if [[ -f "${HOME}/.bashrc" ]]; then
+    sed -i '/# ccswitcher/,/# end ccswitcher/d' "${HOME}/.bashrc"
+    sed -i '/^$/N;/^\n$/d' "${HOME}/.bashrc"
+    echo "Removed ccswitcher from ~/.bashrc"
 fi
 
 echo ""
