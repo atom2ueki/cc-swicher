@@ -21,12 +21,12 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
           source $HOME/.cargo/env
 
-      - name: Build
+      - name: Build ARM64
         run: |
           source $HOME/.cargo/env
-          cargo build --release
+          cargo build --release --target aarch64-apple-darwin
           mkdir -p release
-          cp target/release/ccswitcher release/
+          cp target/release/aarch64-apple-darwin/ccswitcher release/ccswitcher
 
       - name: Package providers.json
         run: cp providers.json release/
