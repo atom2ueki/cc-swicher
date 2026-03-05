@@ -8,29 +8,34 @@ on:
 jobs:
   release:
     runs-on: macos-latest
-    env:
-      CARGO_TERM_COLOR: always
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
       - name: Install Rust
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          source $HOME/.cargo/env
 
       - name: Build
-        run: cargo build --release
+        run: |
+          source $HOME/.cargo/env
+          cargo build --release
 
       - name: Package
         run: |
           mkdir -p release
           cp target/release/ccswitcher release/
           cp providers.json release/
+          ls -la release/
 
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref_name }}
           files: |
             release/ccswitcher
             release/providers.json
