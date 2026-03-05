@@ -7,26 +7,23 @@ on:
 
 jobs:
   release:
-    runs-on: macos-latest
+    runs-on: macos-13
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-apple-darwin, x86_64-apple-darwin
-
-      - name: Build for Apple Silicon
         run: |
-          cargo build --release --locked --target aarch64-apple-darwin
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Build
+        run: |
+          cargo build --release
           mkdir -p release
-          cp target/release/aarch64-apple-darwin/ccswitcher release/ccswitcher-apple-darwin-arm64
-
-      - name: Build for Intel
-        run: |
-          cargo build --release --locked --target x86_64-apple-darwin
-          cp target/release/x86_64-apple-darwin/ccswitcher release/ccswitcher-apple-darwin-x86_64
+          cp target/release/ccswitcher release/ccswitcher
 
       - name: Bundle providers.json
         run: |
@@ -36,8 +33,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            release/ccswitcher-apple-darwin-arm64
-            release/ccswitcher-apple-darwin-x86_64
+            release/ccswitcher
             release/providers.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
