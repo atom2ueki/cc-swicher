@@ -31,15 +31,7 @@ jobs:
           rustup target add ${{ matrix.target }}
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
 
-      - name: Install Linux cross-compiler
-        if: matrix.platform == 'linux-x86_64'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-x86-64-linux-gnu
-
       - name: Build
-        env:
-          CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER: gcc-x86_64-linux-gnu
         run: |
           source $HOME/.cargo/env
           cargo build --release --target ${{ matrix.target }}
