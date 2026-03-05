@@ -4,14 +4,32 @@ A CLI tool to switch Claude Code between different AI providers.
 
 ## Installation
 
+### Quick Install (auto-detects your platform)
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/atom2ueki/cc-switcher/main/install.sh | bash
 ```
 
-This installs from the latest release tag by default. To install a specific version:
+### Manual Install (with specific platform)
 
 ```bash
-GITHUB_BRANCH=1.0.0 curl -fsSL https://raw.githubusercontent.com/atom2ueki/cc-switcher/main/install.sh | bash
+# macOS Apple Silicon (M1/M2/M3)
+curl -fsSL https://raw.githubusercontent.com/atom2ueki/cc-switcher/main/install.sh | bash -s -- -t macos-arm64
+
+# macOS Intel
+curl -fsSL https://raw.githubusercontent.com/atom2ueki/cc-switcher/main/install.sh | bash -s -- -t macos-x86_64
+
+# Linux x86_64
+curl -fsSL https://raw.githubusercontent.com/atom2ueki/cc-switcher/main/install.sh | bash -s -- -t linux-x86_64
+
+# Linux ARM64
+curl -fsSL https://raw.githubusercontent.com/atom2ueki/cc-switcher/main/install.sh | bash -s -- -t linux-arm64
+```
+
+Install a specific version:
+
+```bash
+GITHUB_BRANCH=1.0.0 curl -fsSL https://raw.githubusercontent.com/atom2ueki/cc-switcher/main/install.sh | bash -s -- -t macos-arm64
 ```
 
 Or clone and install locally:

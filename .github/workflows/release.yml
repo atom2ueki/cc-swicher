@@ -10,7 +10,17 @@ permissions:
 
 jobs:
   release:
-    runs-on: macos-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            platform: macos-arm64
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            platform: linux-x86_64
 
     steps:
       - name: Checkout
@@ -18,15 +28,15 @@ jobs:
 
       - name: Install Rust
         run: |
+          rustup target add ${{ matrix.target }}
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
-          source $HOME/.cargo/env
 
       - name: Build
         run: |
           source $HOME/.cargo/env
-          cargo build --release
+          cargo build --release --target ${{ matrix.target }}
           mkdir -p release
-          cp target/release/ccswitcher release/ccswitcher
+          cp target/release/ccswitcher release/ccswitcher-${{ matrix.platform }}
 
       - name: Package providers.json
         run: cp providers.json release/
@@ -36,5 +46,6 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           artifacts: "release/*"
+          artifactGlobPattern: "ccswitcher-*"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
