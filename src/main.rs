@@ -317,7 +317,7 @@ fn get_remote_version() -> Result<String, String> {
     }
 
     let json = String::from_utf8_lossy(&output.stdout);
-    json.split("\"tag_name\":\"")
+    json.split("\"tag_name\": \"")
         .nth(1)
         .and_then(|s| s.split('"').next())
         .map(|s| s.to_string())
