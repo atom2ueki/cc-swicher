@@ -1,0 +1,20 @@
+[package]
+name = "ccswitcher"
+version = "1.0.0"
+edition = "2021"
+description = "Claude Code Model Switcher"
+authors = ["atom2ueki"]
+license = "MIT"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+dirs = "5.0"
+atty = "0.2"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+opt-level = "s"

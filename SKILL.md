@@ -6,32 +6,27 @@ version: 1.0.0
 
 # CC-Switcher Release Guide
 
-Manage version releases for CC-Switcher using semantic versioning without the `v` prefix.
+Manage version releases for CC-Switcher using semantic versioning.
 
 ## Version Strategy
 
-**Single source of truth: Git tags + VERSION in ccswitcher.sh**
+**Single source of truth: Git tags**
 
-When releasing:
-1. Update VERSION in ccswitcher.sh (line ~30)
-2. Create git tag matching the VERSION
-3. Push tag to remote
+The version is determined from the latest GitHub release tag. The binary reads version from git tag at runtime.
 
 ## Release Workflow
 
-### Step 1: Update VERSION Constant
-
-Edit `ccswitcher.sh` - update VERSION on line ~30:
+### Step 1: Build Release Binary
 
 ```bash
-VERSION="1.0.0"
+cargo build --release
 ```
 
-### Step 2: Commit Version Change
+### Step 2: Test Locally
 
 ```bash
-git add ccswitcher.sh
-git commit -m "chore: bump version to 1.0.0"
+./target/release/ccswitcher --version
+./target/release/ccswitcher list
 ```
 
 ### Step 3: Create Git Tag
@@ -50,40 +45,39 @@ git push origin main --tags
 
 ### Step 5: Verify Release
 
-```bash
-git ls-remote --tags origin
-```
-
-Test upgrade:
-
-```bash
-ccswitcher upgrade
-```
+GitHub Actions will build and upload the binary. Check:
+- GitHub Releases page
+- CI workflow run status
 
 ## How Upgrade Works
 
 The `ccswitcher upgrade` command:
 
-1. Fetches tags from GitHub API
-2. Filters tags matching: `^[0-9]+\.[0-9]+\.[0-9]+$`
-3. Sorts using semantic version: `sort -V`
-4. Downloads from: `https://raw.githubusercontent.com/atom2ueki/cc-switcher/{version}/ccswitcher.sh`
-5. Compares with local VERSION to determine if upgrade needed
+1. Fetches latest release from GitHub API: `https://api.github.com/repos/atom2ueki/cc-switcher/releases/latest`
+2. Compares with current binary's version (from VERSION env var)
+3. If newer, downloads new binary to temp location
+4. Replaces the current binary
+5. Shows success message
 
 ## Important Rules
 
-- NEVER use `v` prefix in tags (e.g., use `1.0.0` not `v1.0.0`)
-- VERSION in ccswitcher.sh must exactly match the git tag
+- Tags are WITHOUT `v` prefix (e.g., use `1.0.0` not `v1.0.0`)
 - Tags must follow semantic versioning: X.Y.Z
+- CI builds for: apple-darwin (macOS ARM + x86)
 
-## Troubleshooting
+## Installation for Users
 
-### Upgrade says "Already at latest"
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/atom2ueki/cc-switcher/main/install.sh)"
+```
 
-- Clear cache: `rm -rf ~/.cache/ccswitcher/`
-- Verify tag exists: `git ls-remote --tags origin`
+Or manually:
 
-### "Could not fetch remote version tags"
+```bash
+# Download binary
+curl -fsSL https://github.com/atom2ueki/cc-switcher/releases/latest/download/ccswitcher-apple-darwin-$(uname -m) -o ~/bin/ccswitcher
+chmod +x ~/bin/ccswitcher
 
-- Check GitHub API rate limits
-- Verify repo is public
+# Add to PATH (add to ~/.zshrc)
+export PATH="$HOME/bin:$PATH"
+```
