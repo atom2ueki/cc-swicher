@@ -7,26 +7,18 @@ on:
 
 jobs:
   release:
-    runs-on: macos-13
+    runs-on: macos-latest
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Install Rust
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Build
+        run: cargo build --release
+
+      - name: Create release directory
         run: |
-          cargo build --release
           mkdir -p release
           cp target/release/ccswitcher release/ccswitcher
-
-      - name: Bundle providers.json
-        run: |
           cp providers.json release/
 
       - name: Create release
