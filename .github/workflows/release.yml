@@ -46,7 +46,7 @@ jobs:
             cargo build --release --target ${{ matrix.target }}
           fi
           mkdir -p release
-          cp target/release/ccswitcher release/ccswitcher-${{ matrix.platform }}
+          cp target/${{ matrix.target }}/release/ccswitcher release/ccswitcher-${{ matrix.platform }}
 
       - name: Package providers.json
         run: cp providers.json release/
