@@ -4,33 +4,11 @@ set -euo pipefail
 REPO="atom2ueki/cc-switcher"
 INSTALL_DIR="${HOME}/bin"
 
-# Detect platform
-detect_platform() {
-    case "$(uname -s)" in
-        Darwin*)  echo "apple-darwin" ;;
-        Linux*)   echo "unknown-linux-gnu" ;;
-        *)        echo "Unsupported platform" && exit 1 ;;
-    esac
-}
-
-# Detect architecture
-detect_arch() {
-    case "$(uname -m)" in
-        x86_64)   echo "x86_64" ;;
-        arm64|aarch64)  echo "arm64" ;;
-        *)        echo "Unsupported architecture" && exit 1 ;;
-    esac
-}
-
 # Get latest release version
 get_latest_version() {
     curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | \
         grep '"tag_name"' | sed 's/.*"\([^"]*\)".*/\1/'
 }
-
-PLATFORM=$(detect_platform)
-ARCH=$(detect_arch)
-BINARY_NAME="ccswitcher-${PLATFORM}-${ARCH}"
 
 echo "Fetching latest version..."
 LATEST_VERSION=$(get_latest_version)
@@ -40,8 +18,8 @@ echo "Installing CC-Switcher ${LATEST_VERSION}..."
 mkdir -p "$INSTALL_DIR"
 
 # Download binary
-BINARY_URL="https://github.com/${REPO}/releases/download/${LATEST_VERSION}/${BINARY_NAME}"
-echo "Downloading binary from: $BINARY_URL"
+BINARY_URL="https://github.com/${REPO}/releases/download/${LATEST_VERSION}/ccswitcher"
+echo "Downloading binary..."
 curl -fsSL "$BINARY_URL" -o "${INSTALL_DIR}/ccswitcher"
 chmod +x "${INSTALL_DIR}/ccswitcher"
 
