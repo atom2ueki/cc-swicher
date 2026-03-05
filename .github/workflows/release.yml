@@ -38,13 +38,11 @@ jobs:
           sudo apt-get install -y gcc-x86-64-linux-gnu
 
       - name: Build
+        env:
+          CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER: gcc-x86_64-linux-gnu
         run: |
           source $HOME/.cargo/env
-          if [ "${{ matrix.platform }}" = "linux-x86_64" ]; then
-            cargo build --release --target ${{ matrix.target }} --config target.x86_64-unknown-linux-gnu.linker=gcc-x86_64-linux-gnu
-          else
-            cargo build --release --target ${{ matrix.target }}
-          fi
+          cargo build --release --target ${{ matrix.target }}
           mkdir -p release
           cp target/${{ matrix.target }}/release/ccswitcher release/ccswitcher-${{ matrix.platform }}
 
@@ -54,8 +52,7 @@ jobs:
       - name: Release
         uses: ncipollo/release-action@v1
         with:
-          tagName: ${{ github.ref_name }}
-          artifacts: "release/*"
-          artifactGlobPattern: "ccswitcher-*"
+          tag: ${{ github.ref_name }}
+          artifacts: "release/ccswitcher-*"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
