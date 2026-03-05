@@ -46,5 +46,7 @@ jobs:
         with:
           tag: ${{ github.ref_name }}
           artifacts: "release/ccswitcher-*"
+          allowUpdates: true
+          replaceExistingArtifacts: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
