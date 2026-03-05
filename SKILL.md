@@ -10,60 +10,54 @@ Manage version releases for CC-Switcher using semantic versioning.
 
 ## Version Strategy
 
-**Single source of truth: Git tags**
+**Single source of truth: Cargo.toml**
 
-The version is determined from the latest GitHub release tag. The binary reads version from git tag at runtime.
+The version is defined in `Cargo.toml`:
+```toml
+[package]
+version = "1.0.0"
+```
+
+## When to Bump Version
+
+| Change Type | Example | Version Bump |
+|------------|---------|--------------|
+| **Patch** | Bug fixes, small improvements | 1.0.0 → 1.0.1 |
+| **Minor** | New features, backward compatible | 1.0.0 → 1.1.0 |
+| **Major** | Breaking changes | 1.0.0 → 2.0.0 |
 
 ## Release Workflow
 
-### Step 1: Build Release Binary
+### Step 1: Update Version in Cargo.toml
 
-```bash
-cargo build --release
+Edit the version number according to the change type:
+```toml
+[package]
+version = "1.0.1"  # bump as needed
 ```
 
-### Step 2: Test Locally
+### Step 2: Commit and Tag
 
 ```bash
-./target/release/ccswitcher --version
-./target/release/ccswitcher list
-```
-
-### Step 3: Create Git Tag
-
-Create a tag WITHOUT the `v` prefix:
-
-```bash
-git tag 1.0.0
-```
-
-### Step 4: Push Tag to Remote
-
-```bash
+# Edit Cargo.toml first, then:
+git add Cargo.toml
+git commit -m "bump version to 1.0.1"
+git tag 1.0.1
 git push origin main --tags
 ```
 
-### Step 5: Verify Release
+### Step 3: CI Builds and Releases
 
-GitHub Actions will build and upload the binary. Check:
-- GitHub Releases page
-- CI workflow run status
+GitHub Actions will:
+1. Build the binary
+2. Create GitHub Release with tag from git tag
 
-## How Upgrade Works
+## How Upgrade Works (Runtime)
 
 The `ccswitcher upgrade` command:
-
-1. Fetches latest release from GitHub API: `https://api.github.com/repos/atom2ueki/cc-switcher/releases/latest`
-2. Compares with current binary's version (from VERSION env var)
-3. If newer, downloads new binary to temp location
-4. Replaces the current binary
-5. Shows success message
-
-## Important Rules
-
-- Tags are WITHOUT `v` prefix (e.g., use `1.0.0` not `v1.0.0`)
-- Tags must follow semantic versioning: X.Y.Z
-- CI builds for: apple-darwin (macOS ARM + x86)
+1. Fetches latest release from GitHub API
+2. Compares with current binary's version (from Cargo.toml)
+3. If newer, downloads new binary and replaces itself
 
 ## Installation for Users
 
@@ -71,13 +65,8 @@ The `ccswitcher upgrade` command:
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/atom2ueki/cc-switcher/main/install.sh)"
 ```
 
-Or manually:
+## Important Rules
 
-```bash
-# Download binary
-curl -fsSL https://github.com/atom2ueki/cc-switcher/releases/latest/download/ccswitcher-apple-darwin-$(uname -m) -o ~/bin/ccswitcher
-chmod +x ~/bin/ccswitcher
-
-# Add to PATH (add to ~/.zshrc)
-export PATH="$HOME/bin:$PATH"
-```
+- Version in Cargo.toml MUST match the git tag
+- Use semantic versioning: X.Y.Z
+- CI builds for: apple-darwin (Apple Silicon)
