@@ -8,20 +8,27 @@ on:
 jobs:
   release:
     runs-on: macos-latest
+    env:
+      CARGO_TERM_COLOR: always
 
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
       - name: Build
         run: cargo build --release
 
-      - name: Create release directory
+      - name: Package
         run: |
           mkdir -p release
-          cp target/release/ccswitcher release/ccswitcher
+          cp target/release/ccswitcher release/
           cp providers.json release/
 
-      - name: Create release
+      - name: Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
