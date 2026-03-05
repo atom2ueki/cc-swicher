@@ -19,8 +19,11 @@ fi
 
 # Remove PATH export from .zshrc
 if [[ -f "${HOME}/.zshrc" ]]; then
-    sed -i '' '/export PATH="\$HOME\/bin:\$PATH"/d' "${HOME}/.zshrc"
-    echo "Removed PATH export from ~/.zshrc"
+    # Remove ccswitcher block (between # ccswitcher and # end ccswitcher)
+    sed -i '' '/# ccswitcher/,/# end ccswitcher/d' "${HOME}/.zshrc"
+    # Clean up empty lines
+    sed -i '' '/^$/N;/^\n$/d' "${HOME}/.zshrc"
+    echo "Removed ccswitcher from ~/.zshrc"
 fi
 
 echo ""

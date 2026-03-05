@@ -29,9 +29,11 @@ curl -fsSL "$PROVIDERS_URL" -o "${INSTALL_DIR}/providers.json"
 
 # Add to PATH if not already there
 SHELL_RC="${HOME}/.zshrc"
-PATH_EXPORT='export PATH="${HOME}/bin:${PATH}"'
-if [[ -f "$SHELL_RC" ]] && ! grep -Fq 'export PATH="${HOME}/bin:' "$SHELL_RC"; then
-    echo "$PATH_EXPORT" >> "$SHELL_RC"
+if [[ -f "$SHELL_RC" ]] && ! grep -Fq '# ccswitcher' "$SHELL_RC"; then
+    echo '' >> "$SHELL_RC"
+    echo '# ccswitcher' >> "$SHELL_RC"
+    echo 'export PATH="${HOME}/bin:${PATH}"' >> "$SHELL_RC"
+    echo '# end ccswitcher' >> "$SHELL_RC"
     echo "Added ${HOME}/bin to PATH in ~/.zshrc"
 fi
 
