@@ -116,19 +116,24 @@ curl -fsSL -L "$PROVIDERS_URL" -o "${INSTALL_DIR}/providers.json" || {
 }
 
 # Add to PATH if not already there
-SHELL_RC="${HOME}/.zshrc"
-if [[ -f "$SHELL_RC" ]] && ! grep -Fq '# ccswitcher' "$SHELL_RC"; then
-    echo '' >> "$SHELL_RC"
-    echo '# ccswitcher' >> "$SHELL_RC"
-    echo 'export PATH="${HOME}/bin:${PATH}"' >> "$SHELL_RC"
-    echo '# end ccswitcher' >> "$SHELL_RC"
-    echo "Added ${HOME}/bin to PATH in ~/.zshrc"
-fi
+add_to_rc() {
+    local rc_file="$1"
+    if [[ -f "$rc_file" ]] && ! grep -Fq '# ccswitcher' "$rc_file"; then
+        echo '' >> "$rc_file"
+        echo '# ccswitcher' >> "$rc_file"
+        echo 'export PATH="${HOME}/bin:${PATH}"' >> "$rc_file"
+        echo '# end ccswitcher' >> "$rc_file"
+        echo "Added ${HOME}/bin to PATH in $rc_file"
+    fi
+}
+
+add_to_rc "${HOME}/.zshrc"
+add_to_rc "${HOME}/.bashrc"
 
 echo ""
 echo "Installation complete!"
 echo ""
-echo "Restart your shell or run: source ~/.zshrc"
+echo "Restart your shell or run: source ~/.zshrc (or ~/.bashrc)"
 echo ""
 echo "Usage:"
 echo "  ccswitcher -g -p zai      # Global provider"
