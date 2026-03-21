@@ -1,12 +1,12 @@
 {
-  "version": "3.1.0",
+  "version": "3.2.0",
   "providers": {
     "zai": {
       "name": "Z.AI",
       "base_url": "https://api.z.ai/api/anthropic",
       "models": {
         "haiku": "glm-4.5-air",
-        "sonnet": "glm-5",
+        "sonnet": "glm-5-turbo",
         "opus": "glm-5"
       }
     },
@@ -14,7 +14,7 @@
       "name": "MiniMax",
       "base_url": "https://api.minimax.io/anthropic",
       "models": {
-        "default": "MiniMax-M2.5"
+        "default": "MiniMax-M2.7"
       }
     },
     "anthropic": {
