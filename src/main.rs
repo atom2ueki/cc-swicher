@@ -137,10 +137,10 @@ fn mask_token(token: &str) -> String {
 
 fn get_platform_suffix() -> String {
     match (env::consts::OS, env::consts::ARCH) {
-        ("darwin", "aarch64") => "apple-darwin-arm64",
-        ("darwin", "x86_64") => "apple-darwin-x86_64",
-        ("linux", "x86_64") => "unknown-linux-gnu",
-        ("linux", "aarch64") => "unknown-linux-gnu",
+        ("darwin", "aarch64") => "macos-arm64",
+        ("darwin", "x86_64") => "macos-x86_64",
+        ("linux", "x86_64") => "linux-x86_64",
+        ("linux", "aarch64") => "linux-arm64",
         _ => "unknown",
     }.to_string()
 }
@@ -359,7 +359,8 @@ fn cmd_upgrade() -> Result<(), String> {
         .map_err(|e| format!("Download failed: {}", e))?;
 
     if !output.status.success() {
-        return Err("Failed to download binary".to_string());
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("Failed to download binary from {}: {}", url, stderr));
     }
 
     #[cfg(unix)]
