@@ -257,31 +257,37 @@ fn cmd_apply(provider: &str, scope: &str) -> Result<(), String> {
     let path = get_settings_path(scope);
     let mut settings = read_settings(&path);
 
-    // Set base_url
+    // Set base_url (remove if null to clear stale values from previous providers)
     if let Some(base_url) = &config.base_url {
         settings.env.insert("ANTHROPIC_BASE_URL".into(), JsonValue::String(base_url.clone()));
-    }
-
-    // Handle token
-    let token_key = "ANTHROPIC_AUTH_TOKEN";
-    let token = settings.env.get(token_key)
-        .and_then(|v| if let JsonValue::String(s) = v { Some(s.clone()) } else { None });
-
-    let token = if let Some(t) = token {
-        t
     } else {
-        print!("{} {} ", c(YELLOW, "Enter API Token:"), "");
-        io::stdout().flush().map_err(|e| e.to_string())?;
-        let mut input = String::new();
-        io::stdin().read_line(&mut input).map_err(|e| e.to_string())?;
-        input.trim().to_string()
-    };
-
-    if !token.is_empty() {
-        settings.env.insert(token_key.into(), JsonValue::String(token));
+        settings.env.remove("ANTHROPIC_BASE_URL");
     }
 
-    // Set models
+    // Handle token — only needed for third-party providers (those with a base_url)
+    let token_key = "ANTHROPIC_AUTH_TOKEN";
+    if config.base_url.is_some() {
+        let token = settings.env.get(token_key)
+            .and_then(|v| if let JsonValue::String(s) = v { Some(s.clone()) } else { None });
+
+        let token = if let Some(t) = token {
+            t
+        } else {
+            print!("{} {} ", c(YELLOW, "Enter API Token:"), "");
+            io::stdout().flush().map_err(|e| e.to_string())?;
+            let mut input = String::new();
+            io::stdin().read_line(&mut input).map_err(|e| e.to_string())?;
+            input.trim().to_string()
+        };
+
+        if !token.is_empty() {
+            settings.env.insert(token_key.into(), JsonValue::String(token));
+        }
+    } else {
+        settings.env.remove(token_key);
+    }
+
+    // Set models (remove if null to clear stale values from previous providers)
     if let Some(models) = &config.models {
         if let Some(v) = &models.default {
             settings.env.insert("ANTHROPIC_MODEL".into(), JsonValue::String(v.clone()));
@@ -296,6 +302,12 @@ fn cmd_apply(provider: &str, scope: &str) -> Result<(), String> {
         if let Some(v) = &models.opus {
             settings.env.insert("ANTHROPIC_DEFAULT_OPUS_MODEL".into(), JsonValue::String(v.clone()));
         }
+    } else {
+        settings.env.remove("ANTHROPIC_MODEL");
+        settings.env.remove("CLAUDE_CODE_SUBAGENT_MODEL");
+        settings.env.remove("ANTHROPIC_DEFAULT_HAIKU_MODEL");
+        settings.env.remove("ANTHROPIC_DEFAULT_SONNET_MODEL");
+        settings.env.remove("ANTHROPIC_DEFAULT_OPUS_MODEL");
     }
 
     write_settings(&path, &settings).map_err(|e| e.to_string())?;
