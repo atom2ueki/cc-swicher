@@ -137,8 +137,8 @@ fn mask_token(token: &str) -> String {
 
 fn get_platform_suffix() -> String {
     match (env::consts::OS, env::consts::ARCH) {
-        ("darwin", "aarch64") => "macos-arm64",
-        ("darwin", "x86_64") => "macos-x86_64",
+        ("macos", "aarch64") => "macos-arm64",
+        ("macos", "x86_64") => "macos-x86_64",
         ("linux", "x86_64") => "linux-x86_64",
         ("linux", "aarch64") => "linux-arm64",
         _ => "unknown",
